@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { toast } from '#lib/toast.svelte.ts';
 	import { page } from '$app/state';
 	import Check from '@lucide/svelte/icons/check';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
@@ -91,6 +93,21 @@
 					Number(fitsMe(b.openRoles)) - Number(fitsMe(a.openRoles))
 			)
 	);
+
+	// Confirmation after leaving or disbanding a team (the team page redirects here).
+	onMount(() => {
+		const done = page.url.searchParams.has('left')
+			? 'You left the team.'
+			: page.url.searchParams.has('disbanded')
+				? 'Team disbanded.'
+				: null;
+		if (!done) return;
+		toast(done);
+		const url = new URL(page.url.href);
+		url.searchParams.delete('left');
+		url.searchParams.delete('disbanded');
+		replaceState(url, {});
+	});
 
 	// ---- Modals ----
 	let lfgOpen = $state(false);

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Hourglass from '@lucide/svelte/icons/hourglass';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import Mail from '@lucide/svelte/icons/mail';
 	import PartyPopper from '@lucide/svelte/icons/party-popper';
 	import { enhance } from '$app/forms';
@@ -41,11 +42,25 @@
 		toast('Copied to clipboard.');
 	}
 
-	function confirmSubmit(message: string) {
-		return (e: SubmitEvent) => {
-			if (!confirm(message)) e.preventDefault();
-		};
-	}
+	// Destructive actions all go through one confirmation dialog (never the browser's confirm()).
+	type Person = { id: string; displayName: string | null; username: string };
+	type Confirmable =
+		| { kind: 'leave' }
+		| { kind: 'disband' }
+		| { kind: 'remove'; user: Person }
+		| { kind: 'transfer'; user: Person };
+	let confirming = $state<Confirmable | null>(null);
+	let typedName = $state('');
+	const closeConfirm = () => {
+		confirming = null;
+		typedName = '';
+	};
+	const nameOf = (u: Person) => u.displayName || u.username;
+	// Disbanding, or the owner leaving as the last member, deletes the team: type its name.
+	const deletesTeam = $derived(
+		confirming?.kind === 'disband' || (confirming?.kind === 'leave' && data.isOwner)
+	);
+	const canConfirm = $derived(!deletesTeam || typedName.trim() === team.name.trim());
 </script>
 
 <svelte:head><title>{team.name} · {data.jam.title} · Jamigos</title></svelte:head>
@@ -153,7 +168,9 @@
 							/>
 						</div>
 					</div>
-					<div class="flex flex-wrap items-center gap-2 text-sm">
+					<!-- On small screens the actions get their own row (aligned with the name) instead
+					     of squeezing the member info until it overlaps. -->
+					<div class="flex w-full flex-wrap items-center gap-2 pl-[52px] text-sm sm:w-auto sm:pl-0">
 						{#if m.contactDiscord}
 							<button
 								class="btn-ghost btn-sm"
@@ -164,24 +181,16 @@
 						<a class="btn-ghost btn-sm" href={m.itchUrl} target="_blank" rel="noopener">itch.io ↗</a
 						>
 						{#if data.isOwner && m.id !== me?.id}
-							<form
-								method="POST"
-								action="?/transfer"
-								use:enhance={withToasts()}
-								onsubmit={confirmSubmit(`Make ${m.displayName || m.username} the owner?`)}
+							<button
+								type="button"
+								class="btn-ghost btn-sm"
+								onclick={() => (confirming = { kind: 'transfer', user: m })}>Make owner</button
 							>
-								<input type="hidden" name="userId" value={m.id} />
-								<button class="btn-ghost btn-sm">Make owner</button>
-							</form>
-							<form
-								method="POST"
-								action="?/remove"
-								use:enhance={withToasts()}
-								onsubmit={confirmSubmit(`Remove ${m.displayName || m.username} from the team?`)}
+							<button
+								type="button"
+								class="btn-danger-outline btn-sm"
+								onclick={() => (confirming = { kind: 'remove', user: m })}>Remove</button
 							>
-								<input type="hidden" name="userId" value={m.id} />
-								<button class="btn-ghost btn-sm text-accent">Remove</button>
-							</form>
 						{/if}
 					</div>
 				</div>
@@ -192,6 +201,58 @@
 				</p>
 			{/if}
 		</div>
+
+		{#if data.isMember}
+			{@const lastMember = data.members.length === 1}
+			<div class="rounded-md border border-danger/40" aria-labelledby="danger-title">
+				<h2
+					id="danger-title"
+					class="flex items-center gap-2 border-b border-danger/30 px-5 py-3 font-bold text-danger"
+				>
+					<TriangleAlert size={16} aria-hidden="true" />Danger zone
+				</h2>
+				<div class="divide-y divide-border">
+					{#if !(data.isOwner && lastMember)}
+						<div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+							<div class="max-w-md">
+								<p class="font-bold">Leave team</p>
+								<p class="text-sm text-muted">
+									{#if data.isOwner}
+										You own this team. Make another member the owner before you leave.
+									{:else}
+										You'll be removed from {team.name}. To come back you'd need to ask to join
+										again.
+									{/if}
+								</p>
+							</div>
+							<button
+								type="button"
+								class="btn-danger-outline btn-sm"
+								disabled={data.isOwner}
+								onclick={() => (confirming = { kind: 'leave' })}>Leave team…</button
+							>
+						</div>
+					{/if}
+					{#if data.isOwner}
+						<div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+							<div class="max-w-md">
+								<p class="font-bold">Disband team</p>
+								<p class="text-sm text-muted">
+									Permanently deletes {team.name}{lastMember
+										? ''
+										: ` for all ${data.members.length} members`}. This can't be undone.
+								</p>
+							</div>
+							<button
+								type="button"
+								class="btn-danger-outline btn-sm"
+								onclick={() => (confirming = { kind: 'disband' })}>Disband team…</button
+							>
+						</div>
+					{/if}
+				</div>
+			</div>
+		{/if}
 	</section>
 
 	<aside class="space-y-4">
@@ -201,39 +262,14 @@
 				<p class="text-sm">Want to join this team?</p>
 				<a href={loginHref} class="mt-3 btn-primary w-full">Sign in with itch.io</a>
 			{:else if data.isMember}
-				{#if data.isOwner && data.members.length > 1}
-					<p class="text-sm text-muted">
-						You own this team. Make someone else owner before leaving.
-					</p>
-				{:else}
-					<form
-						method="POST"
-						action="?/leave"
-						use:enhance={withToasts()}
-						onsubmit={confirmSubmit(
-							data.isOwner
-								? 'You are the last member. This will delete the team. Continue?'
-								: 'Leave this team?'
-						)}
-					>
-						<button class="btn-ghost w-full"
-							>{data.isOwner ? 'Leave & delete team' : 'Leave team'}</button
-						>
-					</form>
-				{/if}
-				{#if data.isOwner}
-					<form
-						method="POST"
-						action="?/disband"
-						class="mt-2"
-						use:enhance={withToasts()}
-						onsubmit={confirmSubmit('Disband the team for everyone? This cannot be undone.')}
-					>
-						<button class="w-full text-center text-xs text-muted hover:text-accent"
-							>Disband team</button
-						>
-					</form>
-				{/if}
+				<p class="text-sm">
+					{data.isOwner ? 'You own this team.' : "You're a member of this team."}
+				</p>
+				<p class="mt-1 text-xs text-muted">
+					{data.isOwner
+						? 'You can rename it, manage requests and invite people.'
+						: 'Your teammates can reach you with the contact details below.'}
+				</p>
 			{:else if myPending?.kind === 'invite'}
 				<p class="text-sm">
 					<Mail
@@ -405,3 +441,94 @@
 		</form>
 	</Modal>
 {/if}
+
+<!-- Confirmation for destructive actions -->
+<Modal
+	open={!!confirming}
+	onclose={closeConfirm}
+	title={confirming?.kind === 'leave'
+		? `Leave ${team.name}?`
+		: confirming?.kind === 'disband'
+			? `Disband ${team.name}?`
+			: confirming?.kind === 'remove'
+				? `Remove ${nameOf(confirming.user)}?`
+				: confirming?.kind === 'transfer'
+					? `Make ${nameOf(confirming.user)} the owner?`
+					: ''}
+>
+	{#if confirming}
+		<form
+			method="POST"
+			action="?/{confirming.kind}"
+			class="space-y-4"
+			use:enhance={withToasts({ pending: setPending, onSuccess: closeConfirm })}
+		>
+			{#if confirming.kind === 'remove' || confirming.kind === 'transfer'}
+				<input type="hidden" name="userId" value={confirming.user.id} />
+			{/if}
+
+			<ul class="list-disc space-y-1.5 pl-5 text-sm text-muted">
+				{#if confirming.kind === 'leave'}
+					<li>You'll be removed from <strong class="text-text">{team.name}</strong>.</li>
+					<li>To come back, you'd need to ask to join again or be invited.</li>
+					<li>
+						Your "looking for a team" post isn't restored. You can post again on the jam board.
+					</li>
+				{:else if confirming.kind === 'disband'}
+					<li>
+						<strong class="text-text">{team.name}</strong> is deleted for
+						{data.members.length === 1 ? 'you' : `all ${data.members.length} members`}.
+					</li>
+					<li>Pending invites and join requests are cancelled.</li>
+					<li><strong class="text-danger">This can't be undone.</strong></li>
+				{:else if confirming.kind === 'remove'}
+					<li>
+						{nameOf(confirming.user)} will no longer be on
+						<strong class="text-text">{team.name}</strong>.
+					</li>
+					<li>They can ask to join again later.</li>
+				{:else}
+					<li>
+						{nameOf(confirming.user)} becomes the owner of
+						<strong class="text-text">{team.name}</strong>.
+					</li>
+					<li>You'll no longer be able to rename the team, accept requests or remove members.</li>
+					<li>Only the new owner can make you owner again.</li>
+				{/if}
+			</ul>
+
+			{#if deletesTeam}
+				<div>
+					<label class="label" for="confirm-name"
+						>Type <span class="font-black">{team.name}</span> to confirm</label
+					>
+					<input
+						id="confirm-name"
+						name="confirm"
+						class="w-full"
+						autocomplete="off"
+						spellcheck="false"
+						bind:value={typedName}
+					/>
+				</div>
+			{/if}
+
+			<div class="flex justify-end gap-2">
+				<!-- svelte-ignore a11y_autofocus -->
+				<button type="button" class="btn-ghost" autofocus onclick={closeConfirm}>Cancel</button>
+				<button
+					class={confirming.kind === 'transfer' ? 'btn-primary' : 'btn-danger'}
+					disabled={pending || !canConfirm}
+				>
+					{confirming.kind === 'leave'
+						? 'Leave team'
+						: confirming.kind === 'disband'
+							? 'Disband team'
+							: confirming.kind === 'remove'
+								? 'Remove from team'
+								: 'Make owner'}
+				</button>
+			</div>
+		</form>
+	{/if}
+</Modal>

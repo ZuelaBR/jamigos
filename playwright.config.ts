@@ -18,7 +18,8 @@ export default defineConfig({
 			use: { ...devices['Desktop Chrome'] },
 			metadata: {
 				jam: 'gmtk-2027',
-				teamUpJam: 'metroidvania-month-34'
+				teamUpJam: 'metroidvania-month-34',
+				dangerJam: 'godot-wild-jam-99'
 			}
 		},
 		{
@@ -26,7 +27,8 @@ export default defineConfig({
 			use: { ...devices['Pixel 7'] },
 			metadata: {
 				jam: 'brackeys-17',
-				teamUpJam: 'the-mfg-gamblers-jam'
+				teamUpJam: 'the-mfg-gamblers-jam',
+				dangerJam: '2026-epic-ai-megajam'
 			}
 		}
 	],

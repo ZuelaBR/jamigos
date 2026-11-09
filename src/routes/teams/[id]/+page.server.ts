@@ -83,6 +83,9 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	};
 };
 
+const TYPE_NAME_MESSAGE = 'Type the team name exactly to confirm.';
+const nameConfirmed = (fd: FormData, name: string) => str(fd, 'confirm') === name.trim();
+
 export const actions: Actions = {
 	update: async (event) => {
 		const user = requireUserForAction(event);
@@ -97,20 +100,28 @@ export const actions: Actions = {
 	leave: async (event) => {
 		const user = requireUserForAction(event);
 		const team = await getTeam(event.locals.db, event.params.id);
+		// An owner can only leave as the last member, which deletes the team: same check as disband.
+		if (team?.ownerId === user.id && !nameConfirmed(await event.request.formData(), team.name)) {
+			return fail(400, { message: TYPE_NAME_MESSAGE });
+		}
 		const jam =
 			team && (await event.locals.db.query.jams.findFirst({ where: eq(jams.id, team.jamId) }));
 		const result = await attempt(() => leaveTeam(event.locals.db, event.params.id, user.id));
-		if ('disbanded' in result) redirect(303, jam ? `/jams/${jam.slug}` : '/jams');
+		if ('disbanded' in result) redirect(303, jam ? `/jams/${jam.slug}?left=1` : '/jams');
 		return result;
 	},
 
 	disband: async (event) => {
 		const user = requireUserForAction(event);
 		const team = await getTeam(event.locals.db, event.params.id);
+		// Deleting a team for everyone must be deliberate: the exact team name is required.
+		if (team && !nameConfirmed(await event.request.formData(), team.name)) {
+			return fail(400, { message: TYPE_NAME_MESSAGE });
+		}
 		const jam =
 			team && (await event.locals.db.query.jams.findFirst({ where: eq(jams.id, team.jamId) }));
 		const result = await attempt(() => disbandTeam(event.locals.db, event.params.id, user.id));
-		if (result === undefined) redirect(303, jam ? `/jams/${jam.slug}` : '/jams');
+		if (result === undefined) redirect(303, jam ? `/jams/${jam.slug}?disbanded=1` : '/jams');
 		return result;
 	},
 

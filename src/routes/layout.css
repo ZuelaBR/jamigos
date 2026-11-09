@@ -32,6 +32,9 @@
 	--button-active: #ec4b4b;
 	--on-button: #222;
 	--ok: light-dark(#1a7f37, #4ade80);
+	/* Destructive actions only (leave, disband, remove): deliberately not the brand coral. */
+	--danger: light-dark(#c62828, #f26b6b);
+	--danger-solid: #c62828;
 	--warn: light-dark(#9a6700, #fbbf24);
 	/* light-dark() only takes colours, so only the shadow colour switches. */
 	--header-shadow: 0 1px 2px light-dark(rgb(0 0 0 / 0.12), rgb(255 255 255 / 0.1));
@@ -81,6 +84,7 @@
 	--color-button: var(--button);
 	--color-on-button: var(--on-button);
 	--color-ok: var(--ok);
+	--color-danger: var(--danger);
 	--color-warn: var(--warn);
 }
 
@@ -167,6 +171,27 @@
 	}
 	&:active:not(:disabled) {
 		transform: translateY(1px);
+	}
+}
+
+/* Final "yes, do it" button for destructive actions. */
+@utility btn-danger {
+	@apply btn border border-black/10 text-white;
+	background: var(--danger-solid);
+	&:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--danger-solid) 88%, black);
+	}
+	&:active:not(:disabled) {
+		transform: translateY(1px);
+	}
+}
+
+/* Entry point to a destructive action (opens a confirmation, never acts directly). */
+@utility btn-danger-outline {
+	@apply btn border bg-transparent text-danger;
+	border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+	&:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--danger) 8%, transparent);
 	}
 }
 

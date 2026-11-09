@@ -24,7 +24,7 @@ export default async function globalSetup(config: FullConfig) {
 	}
 
 	const used = config.projects.flatMap((p) =>
-		[p.metadata.jam, p.metadata.teamUpJam].filter(Boolean)
+		[p.metadata.jam, p.metadata.teamUpJam, p.metadata.dangerJam].filter(Boolean)
 	) as string[];
 	for (const slug of used) {
 		if (!jams.some((j) => j.slug === slug))
