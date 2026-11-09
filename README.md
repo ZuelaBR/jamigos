@@ -21,6 +21,10 @@ Fill the jam list with real data (this crawls itch.io slowly, about 5 seconds pe
 SYNC_PAGES=1 npm run sync:jams   # 1 page each of "in progress" and "upcoming"
 ```
 
+### Testing
+
+Unit tests run against an in-memory D1. The Playwright tests start their own dev server on port 5174, with a fresh database in `.wrangler/e2e/` on every run, so they never touch your dev data. That database is filled with **real itch.io jams** from the saved listing pages in `src/lib/jams/fixtures/`, rather than live itch.io, which keeps the tests fast and avoids rate limits. To refresh those pages, re-download `https://itch.io/jams/in-progress` and `https://itch.io/jams/upcoming` into that folder.
+
 ### Useful scripts
 
 | Command                                | What it does                                                |
@@ -28,7 +32,7 @@ SYNC_PAGES=1 npm run sync:jams   # 1 page each of "in progress" and "upcoming"
 | `npm run check`                        | Type-check everything                                       |
 | `npm run lint`                         | Prettier + ESLint                                           |
 | `npx vitest run`                       | Unit tests (parsers, timezones, team rules on in-memory D1) |
-| `npx playwright test`                  | End-to-end team flow (desktop + mobile)                     |
+| `npx playwright test`                  | End-to-end team flow (desktop + mobile) on a throwaway DB   |
 | `npm run db:generate`                  | Generate a SQL migration after editing `schema.ts`          |
 | `npm run db:migrate:local` / `:remote` | Apply migrations                                            |
 | `npm run sync:jams`                    | Crawl itch.io jam listings and push them to the app         |

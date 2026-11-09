@@ -1,7 +1,4 @@
 import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-
-const secret = /^SYNC_SECRET=(.*)$/m.exec(readFileSync('.dev.vars', 'utf8'))![1].trim();
 
 /** Navigate and wait for hydration so clicks aren't lost before JS takes over. */
 async function go(page: Page, url: string) {
@@ -18,31 +15,6 @@ async function pick(scope: Page | Locator, role: 'checkbox' | 'radio', name: str
 		.filter({ has: page.getByRole(role, { name, exact: true }) })
 		.click();
 	await expect(scope.getByRole(role, { name, exact: true })).toBeChecked();
-}
-
-async function seedJam(baseURL: string, slug: string) {
-	const now = Date.now();
-	const res = await fetch(`${baseURL}/api/internal/jams/sync`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
-		body: JSON.stringify({
-			jams: [
-				{
-					slug,
-					title: `E2E Test Jam ${slug}`,
-					url: `https://itch.io/jam/${slug}`,
-					hostName: 'Test Host',
-					hostUrl: 'https://test.itch.io/',
-					coverUrl: null,
-					startsAt: new Date(now - 3_600_000).toISOString(),
-					endsAt: new Date(now + 3 * 86_400_000).toISOString(),
-					joinedCount: 42,
-					phase: 'running'
-				}
-			]
-		})
-	});
-	expect(res.status).toBe(200);
 }
 
 async function signInAndOnboard(browser: Browser, username: string, role: string, tz: string) {
@@ -67,17 +39,21 @@ async function signInAndOnboard(browser: Browser, username: string, role: string
 	return page;
 }
 
-test('two jammers find each other and form a team', async ({ browser, baseURL }, testInfo) => {
+test('two jammers find each other and form a team', async ({ browser }, testInfo) => {
 	// Unique per project + run: desktop and mobile execute in parallel against the same database.
 	const run = `${testInfo.project.name.slice(0, 1)}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-	const slug = `e2e-${run}`;
-	await seedJam(baseURL!, slug);
+	// A real itch.io jam, loaded into the test database by global-setup.ts.
+	const slug = testInfo.project.metadata.jam as string;
 
 	const alice = await signInAndOnboard(browser, `alice${run}`, 'Art', 'Europe/Rome');
 	const bob = await signInAndOnboard(browser, `bob${run}`, 'Programming', 'America/New_York');
 
 	// Bob posts that he's looking for a team.
 	await go(bob, `/jams/${slug}`);
+	await expect(bob.getByRole('link', { name: /Jam page on itch.io/ })).toHaveAttribute(
+		'href',
+		`https://itch.io/jam/${slug}`
+	);
 	await bob.getByRole('button', { name: /I'm looking for a team/ }).click();
 	await bob.getByLabel('Anything teams should know?').fill('Godot dev, free all weekend');
 	await bob.getByRole('button', { name: 'Post', exact: true }).click();

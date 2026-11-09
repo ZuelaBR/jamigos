@@ -3,6 +3,9 @@ import tailwindcss from '@tailwindcss/vite';
 import adapter from '@sveltejs/adapter-cloudflare';
 import { sveltekit } from '@sveltejs/kit/vite';
 
+// Set by playwright.config.ts so E2E tests use a throwaway local database instead of your dev data.
+const e2eStateDir = process.env.E2E_STATE_DIR;
+
 export default defineConfig({
 	plugins: [
 		tailwindcss(),
@@ -12,7 +15,10 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			adapter: adapter(
+				// getPlatformProxy expects the `v3` folder that `wrangler --persist-to <dir>` creates.
+				e2eStateDir ? { platformProxy: { persist: { path: `${e2eStateDir}/v3` } } } : {}
+			)
 		})
 	],
 	test: {
