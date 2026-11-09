@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SearchIcon from '@lucide/svelte/icons/search';
+	import { onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { jamTiming } from '#lib/time.ts';
 
@@ -27,31 +28,43 @@
 
 	function onInput() {
 		clearTimeout(timer);
+		controller?.abort();
+		controller = undefined;
 		active = -1;
-		if (q.trim().length < 2) {
-			results = [];
-			open = false;
-			return;
-		}
-		timer = setTimeout(search, 150);
+		results = [];
+		open = false;
+		loading = false;
+		const query = q.trim();
+		if (query.length < 2) return;
+		timer = setTimeout(() => search(query), 150);
 	}
 
-	async function search() {
-		controller?.abort();
-		controller = new AbortController();
+	async function search(query: string) {
+		const request = new AbortController();
+		controller = request;
 		loading = true;
 		try {
-			const res = await fetch(`/api/jams/search?q=${encodeURIComponent(q.trim())}`, {
-				signal: controller.signal
+			const res = await fetch(`/api/jams/search?q=${encodeURIComponent(query)}`, {
+				signal: request.signal
 			});
-			results = await res.json();
+			if (!res.ok) return;
+			const matches: Result[] = await res.json();
+			// Abort may arrive after a response or be ignored by a fetch implementation.
+			if (controller !== request || request.signal.aborted || q.trim() !== query) return;
+			results = matches;
+			active = -1;
 			open = true;
 		} catch {
-			// Aborted by a newer keystroke, or offline: keep the previous results.
+			// An aborted or failed search leaves the plain GET search available.
 		} finally {
-			loading = false;
+			if (controller === request) loading = false;
 		}
 	}
+
+	onDestroy(() => {
+		clearTimeout(timer);
+		controller?.abort();
+	});
 
 	function onKeydown(e: KeyboardEvent) {
 		if (!open || !results.length) return;
@@ -77,13 +90,7 @@
 </script>
 
 <!-- Without JS this is a plain GET search on /jams. -->
-<form
-	method="GET"
-	action="/jams"
-	role="search"
-	class="relative"
-	onsubmit={(e) => active >= 0 && e.preventDefault()}
->
+<form method="GET" action="/jams" role="search" class="relative">
 	<label for="jam-search" class="sr-only">Search jams</label>
 	<div class="relative">
 		<SearchIcon
