@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/index.ts';
 import { alias } from 'drizzle-orm/sqlite-core';
 import { jams, notifications, teamRequests, teamUps, teams, users } from '#lib/server/db/schema.ts';
@@ -138,12 +138,18 @@ export async function unreadUpdateCount(db: Db, userId: string) {
 	const [row] = await db
 		.select({ n: sql<number>`count(*)` })
 		.from(notifications)
-		.where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+		.where(
+			and(
+				eq(notifications.userId, userId),
+				isNull(notifications.readAt),
+				gt(notifications.createdAt, new Date(Date.now() - UPDATES_MAX_AGE_MS))
+			)
+		);
 	return row?.n ?? 0;
 }
 
 /** The last 30 days of updates, newest first. */
-export async function recentUpdates(db: Db, userId: string, limit = 20) {
+export async function recentUpdates(db: Db, userId: string, limit = 20, offset = 0) {
 	return db
 		.select({
 			id: notifications.id,
@@ -170,13 +176,21 @@ export async function recentUpdates(db: Db, userId: string, limit = 20) {
 				gt(notifications.createdAt, new Date(Date.now() - UPDATES_MAX_AGE_MS))
 			)
 		)
-		.orderBy(desc(notifications.createdAt))
-		.limit(limit);
+		.orderBy(desc(notifications.createdAt), desc(notifications.id))
+		.limit(limit)
+		.offset(offset);
 }
 
-export async function markUpdatesRead(db: Db, userId: string) {
+export async function markUpdatesRead(db: Db, userId: string, ids: string[]) {
+	if (!ids.length) return;
 	await db
 		.update(notifications)
 		.set({ readAt: new Date() })
-		.where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+		.where(
+			and(
+				eq(notifications.userId, userId),
+				inArray(notifications.id, ids),
+				isNull(notifications.readAt)
+			)
+		);
 }

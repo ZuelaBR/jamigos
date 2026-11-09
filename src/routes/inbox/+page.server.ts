@@ -14,10 +14,29 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async (event) => {
 	const user = requireUser(event);
 	const db = event.locals.db;
-	const [items, updates] = await Promise.all([inboxItems(db, user.id), recentUpdates(db, user.id)]);
-	// Opening the inbox reads the updates; the "New" tag uses the state from before this visit.
-	if (updates.some((u) => !u.readAt)) await markUpdatesRead(db, user.id);
-	return { ...items, updates: updates.map(({ readAt, ...u }) => ({ ...u, isNew: !readAt })) };
+	const requestedPage = Number(event.url.searchParams.get('updatesPage') ?? 1);
+	const updatesPage =
+		Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 10000
+			? requestedPage
+			: 1;
+	const pageSize = 20;
+	const [items, rows] = await Promise.all([
+		inboxItems(db, user.id),
+		recentUpdates(db, user.id, pageSize + 1, (updatesPage - 1) * pageSize)
+	]);
+	const updates = rows.slice(0, pageSize);
+	// Only updates actually included on this page have been read.
+	await markUpdatesRead(
+		db,
+		user.id,
+		updates.filter((u) => !u.readAt).map((u) => u.id)
+	);
+	return {
+		...items,
+		updates: updates.map(({ readAt, ...u }) => ({ ...u, isNew: !readAt })),
+		updatesPage,
+		hasMoreUpdates: rows.length > pageSize
+	};
 };
 
 export const actions: Actions = {

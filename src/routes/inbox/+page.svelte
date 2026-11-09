@@ -59,6 +59,21 @@
 		</ul>
 	{/if}
 
+	{#if data.updatesPage > 1 || data.hasMoreUpdates}
+		<nav class="mt-3 flex justify-between gap-3" aria-label="Updates pages">
+			{#if data.updatesPage > 1}
+				<a class="btn-ghost btn-sm" href="/inbox?updatesPage={data.updatesPage - 1}"
+					>Newer updates</a
+				>
+			{:else}<span></span>{/if}
+			{#if data.hasMoreUpdates}
+				<a class="btn-ghost btn-sm" href="/inbox?updatesPage={data.updatesPage + 1}"
+					>Older updates</a
+				>
+			{/if}
+		</nav>
+	{/if}
+
 	<h2 class="mt-8 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">
 		Waiting for you
 	</h2>

@@ -98,7 +98,11 @@ describe('inbox updates when something you sent is accepted', () => {
 
 		expect(await pendingActionCount(db, a.id)).toBe(1);
 		expect(await pendingActionCount(db, a.id, { includeUpdates: false })).toBe(0);
-		await markUpdatesRead(db, a.id);
+		await markUpdatesRead(
+			db,
+			a.id,
+			(await recentUpdates(db, a.id)).map((u) => u.id)
+		);
 		expect(await pendingActionCount(db, a.id)).toBe(0);
 		expect(await recentUpdates(db, a.id)).toHaveLength(1); // still listed, just read
 	});
@@ -132,5 +136,54 @@ describe('inbox updates when something you sent is accepted', () => {
 		expect(
 			await db.select().from(notifications).where(eq(notifications.userId, bob.id))
 		).toHaveLength(1);
+	});
+});
+
+describe('reading paginated updates', () => {
+	it('only marks displayed IDs belonging to the reader, preserving unseen and arriving updates', async () => {
+		const j = await jam();
+		const a = await user('Reader');
+		const b = await user('Other');
+		const values = (userId: string, createdAt: Date) => ({
+			userId,
+			actorId: b.id,
+			jamId: j.id,
+			kind: 'teamup_accepted' as const,
+			teamName: 'Team',
+			createdAt
+		});
+		const base = Date.now() - 100000;
+		for (let i = 0; i < 21; i++) {
+			await db.insert(notifications).values(values(a.id, new Date(base + i * 1000)));
+		}
+		const displayed = await recentUpdates(db, a.id);
+		const [arriving] = await db.insert(notifications).values(values(a.id, new Date())).returning();
+		const [other] = await db.insert(notifications).values(values(b.id, new Date())).returning();
+		await markUpdatesRead(db, a.id, [...displayed.map((u) => u.id), other.id]);
+		expect(await pendingActionCount(db, a.id)).toBe(2);
+		expect(
+			(await db.query.notifications.findFirst({ where: eq(notifications.id, arriving.id) }))?.readAt
+		).toBeNull();
+		expect(
+			(await db.query.notifications.findFirst({ where: eq(notifications.id, other.id) }))?.readAt
+		).toBeNull();
+		const older = await recentUpdates(db, a.id, 20, 20);
+		expect(older).toHaveLength(2);
+		expect(older.some((u) => !u.readAt)).toBe(true);
+	});
+
+	it('does not count expired updates that cannot be displayed', async () => {
+		const j = await jam();
+		const a = await user('Reader');
+		await db.insert(notifications).values({
+			userId: a.id,
+			actorId: a.id,
+			jamId: j.id,
+			kind: 'teamup_accepted',
+			teamName: 'Old',
+			createdAt: new Date(Date.now() - 31 * 86400000)
+		});
+		expect(await pendingActionCount(db, a.id)).toBe(0);
+		expect(await recentUpdates(db, a.id)).toHaveLength(0);
 	});
 });
