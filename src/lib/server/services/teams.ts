@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/index.ts';
 import {
 	lfgPosts,
@@ -201,9 +201,17 @@ export async function closeLfgPost(db: Db, jamId: string, userId: string) {
 // ---------------------------------------------------------------------------
 
 /** Statements that make `userId` a member of `team`, and tidy up their other jam activity. */
-function joinStatements(db: Db, team: Team, userId: string) {
+function joinStatements(db: Db, team: Team, userId: string, requestId?: string) {
 	return [
-		db.insert(teamMembers).values({ teamId: team.id, userId, jamId: team.jamId }),
+		// A withdrawn request must fail inside the batch, rolling back every side effect.
+		// The scalar subquery returns NULL when no longer pending; user_id is NOT NULL.
+		db.insert(teamMembers).values({
+			teamId: team.id,
+			userId: requestId
+				? sql`(select ${teamRequests.userId} from ${teamRequests} where ${teamRequests.id} = ${requestId} and ${teamRequests.status} = 'pending')`
+				: userId,
+			jamId: team.jamId
+		}),
 		// Their LFG post is no longer needed.
 		db
 			.update(lfgPosts)
@@ -443,7 +451,10 @@ export async function respondToRequest(
 		throw new ServiceError("You can't answer this request.");
 
 	if (!accept) {
-		await db.update(teamRequests).set({ status: 'declined' }).where(eq(teamRequests.id, requestId));
+		await db
+			.update(teamRequests)
+			.set({ status: 'declined' })
+			.where(and(eq(teamRequests.id, requestId), eq(teamRequests.status, 'pending')));
 		return { team, accepted: false };
 	}
 
@@ -464,7 +475,7 @@ export async function respondToRequest(
 		await db.batch([
 			// joinStatements cancels all of the user's pending requests for the jam, so mark
 			// this one accepted afterwards.
-			...joinStatements(db, team, req.userId),
+			...joinStatements(db, team, req.userId, requestId),
 			db.update(teamRequests).set({ status: 'accepted' }).where(eq(teamRequests.id, requestId)),
 			// Tell whoever sent it: the requester (owner accepted) or the owner (invitee accepted).
 			db.insert(notifications).values({
@@ -477,6 +488,12 @@ export async function respondToRequest(
 			})
 		]);
 	} catch (err) {
+		if (
+			/NOT NULL constraint failed: team_members.user_id/i.test(
+				String((err as { cause?: unknown })?.cause ?? err)
+			)
+		)
+			throw new ServiceError('This request is no longer pending.');
 		if (isUniqueViolation(err)) throw new ServiceError('Already on a team for this jam.');
 		throw err;
 	}
@@ -494,7 +511,7 @@ export async function cancelRequest(db: Db, requestId: string, actorId: string) 
 	await db
 		.update(teamRequests)
 		.set({ status: 'cancelled' })
-		.where(and(eq(teamRequests.id, requestId), ne(teamRequests.status, 'accepted')));
+		.where(and(eq(teamRequests.id, requestId), eq(teamRequests.status, 'pending')));
 }
 
 // ---------------------------------------------------------------------------
@@ -569,7 +586,10 @@ export async function respondToTeamUp(
 	if (req.toUserId !== actorId) throw new ServiceError("You can't answer this request.");
 
 	if (!accept) {
-		await db.update(teamUps).set({ status: 'declined' }).where(eq(teamUps.id, teamUpId));
+		await db
+			.update(teamUps)
+			.set({ status: 'declined' })
+			.where(and(eq(teamUps.id, teamUpId), eq(teamUps.status, 'pending')));
 		return { team: null };
 	}
 
@@ -578,7 +598,10 @@ export async function respondToTeamUp(
 		membershipForJam(db, req.jamId, req.toUserId)
 	]);
 	if (fromTeam || toTeam) {
-		await db.update(teamUps).set({ status: 'cancelled' }).where(eq(teamUps.id, teamUpId));
+		await db
+			.update(teamUps)
+			.set({ status: 'cancelled' })
+			.where(and(eq(teamUps.id, teamUpId), eq(teamUps.status, 'pending')));
 		throw new ServiceError(
 			toTeam ? "You're already on a team for this jam." : 'They already joined another team.'
 		);
@@ -603,7 +626,11 @@ export async function respondToTeamUp(
 	};
 	try {
 		await db.batch([
-			db.insert(teams).values(team),
+			db.insert(teams).values({
+				...team,
+				// Guard team creation in the same transaction as both memberships.
+				ownerId: sql`(select ${teamUps.fromUserId} from ${teamUps} where ${teamUps.id} = ${teamUpId} and ${teamUps.status} = 'pending')`
+			}),
 			...joinStatements(db, team, req.fromUserId),
 			...joinStatements(db, team, req.toUserId),
 			// joinStatements cancels every pending team-up for both people, so mark this one last.
@@ -621,6 +648,12 @@ export async function respondToTeamUp(
 			})
 		]);
 	} catch (err) {
+		if (
+			/NOT NULL constraint failed: teams.owner_id/i.test(
+				String((err as { cause?: unknown })?.cause ?? err)
+			)
+		)
+			throw new ServiceError('This request is no longer pending.');
 		if (isUniqueViolation(err))
 			throw new ServiceError('One of you already joined a team for this jam.');
 		throw err;
@@ -634,5 +667,8 @@ export async function cancelTeamUp(db: Db, teamUpId: string, actorId: string) {
 	if (!req || req.status !== 'pending')
 		throw new ServiceError('This request is no longer pending.');
 	if (req.fromUserId !== actorId) throw new ServiceError("You can't cancel this.");
-	await db.update(teamUps).set({ status: 'cancelled' }).where(eq(teamUps.id, teamUpId));
+	await db
+		.update(teamUps)
+		.set({ status: 'cancelled' })
+		.where(and(eq(teamUps.id, teamUpId), eq(teamUps.status, 'pending')));
 }

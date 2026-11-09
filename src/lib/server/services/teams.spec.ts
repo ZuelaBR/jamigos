@@ -5,6 +5,7 @@ import { createTestDb } from '../testing/d1.ts';
 import {
 	jams,
 	lfgPosts,
+	notifications,
 	teamMembers,
 	teamRequests,
 	teamUps,
@@ -14,6 +15,7 @@ import {
 } from '../db/schema.ts';
 import {
 	ServiceError,
+	cancelRequest,
 	cancelTeamUp,
 	createTeam,
 	defaultTeamName,
@@ -287,5 +289,62 @@ describe('team-ups (two solo jammers forming a team)', () => {
 		).toBe('Mika & devon');
 		const long = { username: 'x', displayName: 'A'.repeat(50) };
 		expect(defaultTeamName(long, long).length).toBeLessThanOrEqual(60);
+	});
+});
+
+// Pause immediately before the atomic write to reproduce a withdrawal after the reads.
+function beforeBatch(run: () => Promise<void>): Db {
+	return new Proxy(db, {
+		get(target, property) {
+			if (property === 'batch')
+				return async (...args: Parameters<Db['batch']>) => {
+					await run();
+					return target.batch(...args);
+				};
+			return Reflect.get(target, property);
+		}
+	});
+}
+
+describe('withdrawal racing acceptance', () => {
+	it('does not join or notify after a join request is withdrawn', async () => {
+		const owner = await makeUser('owner');
+		const bob = await makeUser('bob');
+		const t = await createTeam(db, jam, owner.id, team('A'));
+		await requestToJoin(db, t.id, bob.id, '');
+		const req = (await db.query.teamRequests.findFirst({
+			where: eq(teamRequests.userId, bob.id)
+		}))!;
+		const racingDb = beforeBatch(() => cancelRequest(db, req.id, bob.id));
+		await expect(respondToRequest(racingDb, req.id, owner.id, true)).rejects.toThrow(
+			/no longer pending/
+		);
+		expect(await db.select().from(teamMembers).where(eq(teamMembers.userId, bob.id))).toHaveLength(
+			0
+		);
+		expect(
+			(await db.query.teamRequests.findFirst({ where: eq(teamRequests.id, req.id) }))?.status
+		).toBe('cancelled');
+		expect(
+			await db.query.notifications.findMany({ where: eq(notifications.userId, bob.id) })
+		).toHaveLength(0);
+	});
+
+	it('rolls back team creation after a team-up is withdrawn', async () => {
+		const a = await makeUser('a');
+		const b = await makeUser('b');
+		await sendTeamUp(db, jam, a.id, b.id, '');
+		const req = (await db.query.teamUps.findFirst({ where: eq(teamUps.fromUserId, a.id) }))!;
+		const racingDb = beforeBatch(() => cancelTeamUp(db, req.id, a.id));
+		await expect(respondToTeamUp(racingDb, req.id, b.id, true)).rejects.toThrow(
+			/no longer pending/
+		);
+		expect(await db.select().from(teams).where(eq(teams.jamId, jam.id))).toHaveLength(0);
+		expect(await db.select().from(teamMembers).where(eq(teamMembers.jamId, jam.id))).toHaveLength(
+			0
+		);
+		expect((await db.query.teamUps.findFirst({ where: eq(teamUps.id, req.id) }))?.status).toBe(
+			'cancelled'
+		);
 	});
 });
