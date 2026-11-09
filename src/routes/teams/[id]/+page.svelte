@@ -43,7 +43,7 @@
 	}
 </script>
 
-<svelte:head><title>{team.name} · {data.jam.title}</title></svelte:head>
+<svelte:head><title>{team.name} · {data.jam.title} · Jamigos</title></svelte:head>
 
 <a href="/jams/{data.jam.slug}?tab=teams" class="text-sm text-muted hover:text-text"
 	>← {data.jam.title}</a

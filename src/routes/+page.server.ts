@@ -1,10 +1,14 @@
-import { listJams } from '#lib/server/services/jams.ts';
+import { activeJams, stats, upcomingJams } from '#lib/server/services/home.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const [running, upcoming] = await Promise.all([
-		listJams(locals.db, { tab: 'running', sort: 'active', limit: 6, offset: 0 }),
-		listJams(locals.db, { tab: 'upcoming', sort: 'soon', limit: 6, offset: 0 })
+	const [active, upcoming, totals] = await Promise.all([
+		activeJams(locals.db, 6),
+		upcomingJams(locals.db, 6),
+		stats(locals.db)
 	]);
-	return { running: running.slice(0, 6), upcoming: upcoming.slice(0, 6) };
+	// Prefer jams where people are already teaming up; fill with popular upcoming jams.
+	const slugs = new Set(active.map((j) => j.slug));
+	const jams = [...active, ...upcoming.filter((j) => !slugs.has(j.slug))].slice(0, 6);
+	return { jams, stats: totals };
 };

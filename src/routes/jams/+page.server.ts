@@ -15,7 +15,8 @@ const PAGE_SIZE = 24;
 export const load: PageServerLoad = async ({ url, locals }) => {
 	const tab: JamTab = url.searchParams.get('tab') === 'upcoming' ? 'upcoming' : 'running';
 	const sortParam = url.searchParams.get('sort');
-	const sort: JamSort = sortParam === 'popular' || sortParam === 'active' ? sortParam : 'soon';
+	// Default to where people are actually teaming up; "closing soonest" buried the useful jams.
+	const sort: JamSort = sortParam === 'popular' || sortParam === 'soon' ? sortParam : 'active';
 	const q = (url.searchParams.get('q') ?? '').trim().slice(0, 80);
 	const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 
@@ -47,7 +48,7 @@ export const actions: Actions = {
 		if (await getJamBySlug(event.locals.db, slug)) redirect(303, `/jams/${slug}`);
 
 		const res = await event.fetch(`https://itch.io/jam/${encodeURIComponent(slug)}`, {
-			headers: { 'User-Agent': 'JamMates/1.0 (game jam team finder)' }
+			headers: { 'User-Agent': 'Jamigos/1.0 (game jam team finder)' }
 		});
 		if (res.status === 404)
 			return fail(404, { message: "We couldn't find that jam on itch.io.", url: input });

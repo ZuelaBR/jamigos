@@ -5,7 +5,7 @@
 	let { data, form }: PageProps = $props();
 </script>
 
-<svelte:head><title>Edit profile</title></svelte:head>
+<svelte:head><title>Edit profile · Jamigos</title></svelte:head>
 
 <div class="mx-auto max-w-2xl">
 	<div class="flex items-baseline justify-between gap-4">

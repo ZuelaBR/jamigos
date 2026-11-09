@@ -5,7 +5,7 @@
 	let { data, form }: PageProps = $props();
 </script>
 
-<svelte:head><title>Set up your profile</title></svelte:head>
+<svelte:head><title>Set up your profile · Jamigos</title></svelte:head>
 
 <div class="mx-auto max-w-2xl">
 	<h1 class="text-2xl font-bold sm:text-3xl">

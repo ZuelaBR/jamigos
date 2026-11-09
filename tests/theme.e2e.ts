@@ -16,6 +16,7 @@ test('theme choice applies instantly and is server-rendered on reload', async ({
 	expect(await res.text()).toContain('data-theme="dark"');
 
 	await page.reload();
+	await page.locator('html[data-hydrated]').waitFor();
 	await expect(html).toHaveAttribute('data-theme', 'dark');
 
 	await page.getByRole('button', { name: /^Theme:/ }).click();

@@ -24,7 +24,17 @@
 
 	// ---- Filters (kept in the URL so filtered views can be shared) ----
 	const params = $derived(page.url.searchParams);
-	const tab = $derived(params.get('tab') === 'teams' ? 'teams' : 'players');
+	// Open on what the viewer most likely needs: someone looking for a team wants to see teams
+	// that are recruiting; team owners and visitors want to see people. An explicit ?tab= wins.
+	const defaultTab = $derived(
+		data.me && !viewer?.myTeamId && board.teams.some((t) => t.status === 'open')
+			? 'teams'
+			: 'players'
+	);
+	const tab = $derived.by(() => {
+		const t = params.get('tab');
+		return t === 'teams' || t === 'players' ? t : defaultTab;
+	});
 	const roleFilter = $derived(
 		ROLES.includes(params.get('role') as Role) ? (params.get('role') as Role) : null
 	);
@@ -94,16 +104,20 @@
 	const canInvite = $derived(!!viewer?.isOwner && myTeam?.status === 'open');
 </script>
 
-<svelte:head><title>{jam.title} · Find teammates</title></svelte:head>
+<svelte:head><title>{jam.title} · Find teammates · Jamigos</title></svelte:head>
 
 <!-- Jam header -->
 <section class="overflow-hidden card">
-	<div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-6">
+	<div class="flex items-start gap-3 p-4 sm:items-center sm:gap-4 sm:p-6">
 		{#if jam.coverUrl}
-			<img src={jam.coverUrl} alt="" class="h-24 w-32 shrink-0 rounded-lg object-cover" />
+			<img
+				src={jam.coverUrl}
+				alt=""
+				class="h-14 w-[72px] shrink-0 rounded-md object-cover sm:h-24 sm:w-32"
+			/>
 		{/if}
 		<div class="min-w-0 flex-1">
-			<h1 class="text-2xl leading-tight font-bold sm:text-3xl">{jam.title}</h1>
+			<h1 class="text-xl leading-tight font-bold sm:text-3xl">{jam.title}</h1>
 			{#if jam.hostName}<p class="text-sm text-muted">Hosted by {jam.hostName}</p>{/if}
 			<div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
 				<span class="flex items-center gap-1.5 {timing.live ? 'text-ok' : 'text-muted'}">
@@ -112,13 +126,19 @@
 					{timing.label}
 				</span>
 				{#if jam.startsAt && jam.endsAt}
-					<span class="text-muted">{formatDate(jam.startsAt)} → {formatDate(jam.endsAt)}</span>
+					<span class="hidden text-muted sm:inline"
+						>{formatDate(jam.startsAt)} → {formatDate(jam.endsAt)}</span
+					>
 				{/if}
 				<span class="text-muted">{jam.joinedCount.toLocaleString('en')} joined on itch.io</span>
+				<a href={jam.url} target="_blank" rel="noopener" class="link sm:hidden">itch.io page ↗</a>
 			</div>
 		</div>
-		<a href={jam.url} target="_blank" rel="noopener" class="btn-ghost btn-sm shrink-0"
-			>Jam page on itch.io ↗</a
+		<a
+			href={jam.url}
+			target="_blank"
+			rel="noopener"
+			class="btn-ghost hidden btn-sm shrink-0 sm:inline-flex">Jam page on itch.io ↗</a
 		>
 	</div>
 
@@ -184,7 +204,7 @@
 		<button
 			role="tab"
 			aria-selected={tab === 'players'}
-			onclick={() => setParam('tab', null)}
+			onclick={() => setParam('tab', defaultTab === 'players' ? null : 'players')}
 			class="rounded-md px-3 py-1.5 text-sm font-medium {tab === 'players'
 				? 'bg-surface-2'
 				: 'text-muted hover:text-text'}"
@@ -194,7 +214,7 @@
 		<button
 			role="tab"
 			aria-selected={tab === 'teams'}
-			onclick={() => setParam('tab', 'teams')}
+			onclick={() => setParam('tab', defaultTab === 'teams' ? null : 'teams')}
 			class="rounded-md px-3 py-1.5 text-sm font-medium {tab === 'teams'
 				? 'bg-surface-2'
 				: 'text-muted hover:text-text'}"

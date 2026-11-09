@@ -1,6 +1,6 @@
-# JamMates
+# Jamigos
 
-Find teammates for itch.io game jams. Sign in with itch.io, say what you do, then post on a jam's board or start a team and invite people.
+**Find your party. Make your game.** Jamigos helps people find teammates for itch.io game jams. Sign in with itch.io, say what you do, then post on a jam's board or start a team and invite people.
 
 **Stack:** SvelteKit 3 · Svelte 5 · Tailwind 4 · Drizzle ORM · Cloudflare Workers + D1 (free tier) · GitHub Actions for jam syncing.
 
@@ -49,7 +49,7 @@ We request only the `profile:me` scope. The access token is used once to read th
 
 ```sh
 npx wrangler login
-npx wrangler d1 create jammates          # copy the database_id into wrangler.jsonc
+npx wrangler d1 create jamigos          # copy the database_id into wrangler.jsonc
 npx wrangler secret put SYNC_SECRET      # any long random string
 # set vars.ITCH_CLIENT_ID in wrangler.jsonc, then:
 npm run deploy                           # build + remote migrations + wrangler deploy
@@ -59,10 +59,21 @@ npm run deploy                           # build + remote migrations + wrangler 
 
 `.github/workflows/sync-jams.yml` runs every 6 hours, and you can also trigger it from the Actions tab. In the GitHub repo settings, add:
 
-- the **variable** `SYNC_URL`: your deployed URL, for example `https://jammates.<you>.workers.dev`
+- the **variable** `SYNC_URL`: your deployed URL, for example `https://jamigos.<you>.workers.dev`
 - the **secret** `SYNC_SECRET`: the same value you gave wrangler
 
 The crawler runs in GitHub Actions, not in a Worker, because itch.io rate-limits aggressively. Polite crawling needs long waits between requests, and parsing needs more CPU than a free Worker gets. If itch.io changes its markup, the job **fails loudly** (it reports 0 jams parsed), so GitHub emails you. To update the parser, refresh the fixtures in `src/lib/jams/fixtures/` and run the tests.
+
+## Brand
+
+Logos, icons and social images come from the Jamigos brand kit. The site uses the subset in `static/brand/`, served at `/brand/...`:
+
+- `favicons/`: tab icons, the Apple touch icon, maskable app icons and `site.webmanifest`, linked from `src/app.html`
+- `logos/jamigos-horizontal-{light,dark}.svg`: the header logo (180px wide; on small screens the header shows just the team mark)
+- `icons/jamigos-team-{light,dark}.svg`: the team mark, also used on the home page
+- `social/jamigos-open-graph-light.png`: the 1200×630 link-preview image (`og:image`)
+
+Light/dark artwork is switched in CSS with the `only-light` / `only-dark` classes, which follow the theme switcher as well as the OS. Brand colours: coral `#FA5C5C` (buttons, with charcoal `#222` text as the kit specifies), ink `#222`. The name, tagline and theme colour are in `src/lib/config.ts`.
 
 ## How it's organised
 
@@ -78,4 +89,4 @@ scripts/sync-jams.ts             crawler used by the GitHub Action
 
 Key rules: each user can be on **one team per jam** (enforced by a unique index). When someone joins a team, their LFG post closes and their other pending requests for that jam are cancelled. Contact details are visible only to signed-in users.
 
-JamMates is a fan project and is not affiliated with itch.io.
+Jamigos is a fan project and is not affiliated with itch.io.

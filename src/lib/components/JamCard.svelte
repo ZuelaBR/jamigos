@@ -43,12 +43,21 @@
 			{#if timing.live}<span class="h-1.5 w-1.5 rounded-full bg-ok" aria-hidden="true"></span>{/if}
 			{timing.label}
 		</p>
-		<div class="mt-auto flex flex-wrap gap-x-3 pt-1 text-xs text-muted">
-			<span>{jam.joinedCount.toLocaleString('en')} joined</span>
-			{#if jam.lookingCount}<span class="text-text">🙋 {jam.lookingCount} looking</span>{/if}
-			{#if jam.teamCount}<span class="text-text"
-					>👥 {jam.teamCount} {jam.teamCount === 1 ? 'team' : 'teams'}</span
-				>{/if}
+		<!-- Jamigos activity first (that's why you're here); itch.io's count is secondary. -->
+		<div class="mt-auto flex flex-wrap items-baseline gap-x-2 pt-1.5 text-xs">
+			{#if jam.lookingCount || jam.teamCount}
+				<span class="font-bold text-accent">
+					{[
+						jam.lookingCount && `${jam.lookingCount} looking`,
+						jam.teamCount && `${jam.teamCount} ${jam.teamCount === 1 ? 'team' : 'teams'}`
+					]
+						.filter(Boolean)
+						.join(' · ')}
+				</span>
+			{:else}
+				<span class="text-muted">No one here yet. Be the first!</span>
+			{/if}
+			<span class="text-muted">· {jam.joinedCount.toLocaleString('en')} on itch.io</span>
 		</div>
 	</div>
 </a>

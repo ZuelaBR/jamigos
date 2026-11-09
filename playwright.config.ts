@@ -19,7 +19,7 @@ export default defineConfig({
 	webServer: {
 		command: [
 			`rm -rf ${STATE_DIR}`,
-			`npx wrangler d1 migrations apply jammates --local --persist-to ${STATE_DIR}`,
+			`npx wrangler d1 migrations apply jamigos --local --persist-to ${STATE_DIR}`,
 			`npx vite dev --port ${PORT} --strictPort`
 		].join(' && '),
 		env: { E2E_STATE_DIR: STATE_DIR },

@@ -1,12 +1,11 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '#lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 	import { page, navigating } from '$app/state';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import Toasts from '#lib/components/Toasts.svelte';
-	import { APP_NAME } from '#lib/config.ts';
+	import { APP_NAME, BRAND_COLOR, TAGLINE } from '#lib/config.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
@@ -19,15 +18,25 @@
 		`/login?next=${encodeURIComponent(page.url.pathname + page.url.search)}`
 	);
 	const isActive = (prefix: string) => page.url.pathname.startsWith(prefix);
+	const description =
+		'Find teammates for itch.io game jams: artists, coders, musicians and designers looking for a team.';
 </script>
 
+<!-- Favicons and the web manifest are static and live in src/app.html. -->
 <svelte:head>
-	<link rel="icon" href={favicon} />
-	<title>{APP_NAME} · Find a team for your next game jam</title>
-	<meta
-		name="description"
-		content="Find teammates for itch.io game jams: artists, coders, musicians and designers looking for a team."
-	/>
+	<title>{APP_NAME} · {TAGLINE}</title>
+	<meta name="description" content={description} />
+	<meta name="theme-color" content={BRAND_COLOR} />
+	<!-- Link previews (Discord, Twitter/X, Slack, …). Crawlers need absolute URLs. -->
+	<meta property="og:site_name" content={APP_NAME} />
+	<meta property="og:title" content="{APP_NAME} · {TAGLINE}" />
+	<meta property="og:description" content={description} />
+	<meta property="og:url" content={page.url.origin + page.url.pathname} />
+	<meta property="og:image" content="{page.url.origin}/brand/social/jamigos-open-graph-light.png" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta property="og:image:alt" content="{APP_NAME}: {TAGLINE}" />
+	<meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <svelte:window onclick={() => (menuOpen = false)} />
@@ -36,16 +45,46 @@
 	<div class="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-accent" aria-hidden="true"></div>
 {/if}
 
-<div class="flex min-h-dvh flex-col">
-	<!-- itch.io-style header: solid bar, 50px, faint shadow -->
+<!-- overflow-x: clip (not hidden) keeps full-bleed bands from adding a horizontal scrollbar
+     without breaking the sticky header. -->
+<div class="flex min-h-dvh flex-col overflow-x-clip">
+	<!-- itch.io-style header: solid bar with a faint shadow. 64px tall so the logo fits at the
+	     brand kit's 180px minimum width; small screens show just the team mark (min 48px). -->
 	<header class="sticky top-0 z-40 bg-surface" style="box-shadow: var(--header-shadow)">
-		<nav class="mx-auto flex h-[50px] max-w-6xl items-center gap-5 px-4">
-			<a href="/" class="flex items-center gap-2 text-[17px] font-black tracking-tight text-text">
-				<span
-					class="flex h-7 w-7 items-center justify-center rounded-md bg-button text-[13px] text-white"
-					aria-hidden="true">JM</span
-				>
-				<span>{APP_NAME}</span>
+		<nav class="mx-auto flex h-16 max-w-6xl items-center gap-5 px-4">
+			<a href="/" class="flex shrink-0 items-center" aria-label="{APP_NAME} home">
+				<span class="sm:hidden">
+					<img
+						class="only-light"
+						src="/brand/icons/jamigos-team-light.svg"
+						alt=""
+						width="48"
+						height="48"
+					/>
+					<img
+						class="only-dark"
+						src="/brand/icons/jamigos-team-dark.svg"
+						alt=""
+						width="48"
+						height="48"
+					/>
+				</span>
+				<span class="hidden sm:block">
+					<img
+						class="only-light"
+						src="/brand/logos/jamigos-horizontal-light.svg"
+						alt=""
+						width="180"
+						height="49"
+					/>
+					<img
+						class="only-dark"
+						src="/brand/logos/jamigos-horizontal-dark.svg"
+						alt=""
+						width="180"
+						height="49"
+					/>
+				</span>
 			</a>
 			<a
 				href="/jams"
@@ -69,7 +108,7 @@
 						Inbox
 						{#if data.inboxCount}
 							<span
-								class="absolute -top-2 -right-4 min-w-5 rounded-full bg-button px-1.5 text-center text-[11px] leading-5 font-bold text-white"
+								class="absolute -top-2 -right-4 min-w-5 rounded-full bg-button px-1.5 text-center text-[11px] leading-5 font-bold text-on-button"
 							>
 								{data.inboxCount}
 							</span>

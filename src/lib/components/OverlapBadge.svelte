@@ -18,6 +18,10 @@
 	<span aria-hidden="true">🕒</span>{formatOffset(offset)}
 	{#if hours !== null && level}
 		<span aria-hidden="true">·</span>
-		<span class={colour[level]}>~{hours}h overlap with you</span>
+		<span
+			class="whitespace-nowrap {colour[level]}"
+			title="About {hours} waking hours overlap with yours each day"
+			>~{hours}h overlap<span class="sr-only"> with you</span></span
+		>
 	{/if}
 </span>

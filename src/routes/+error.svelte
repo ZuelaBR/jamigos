@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 </script>
 
-<svelte:head><title>{page.status} · Something went wrong</title></svelte:head>
+<svelte:head><title>{page.status} · Something went wrong · Jamigos</title></svelte:head>
 
 <div class="mx-auto max-w-md py-16 text-center">
 	<p class="text-6xl" aria-hidden="true">{page.status === 404 ? '🗺️' : '💥'}</p>

@@ -35,14 +35,14 @@
 		{ id: 'running', label: 'Happening now' },
 		{ id: 'upcoming', label: 'Starting soon' }
 	] as const;
-	const sorts = [
-		{ id: 'soon', label: 'Soonest' },
+	const sorts = $derived([
 		{ id: 'active', label: 'Most teammates looking' },
-		{ id: 'popular', label: 'Most popular' }
-	] as const;
+		{ id: 'soon', label: data.filters.tab === 'running' ? 'Closing soonest' : 'Starting soonest' },
+		{ id: 'popular', label: 'Most popular on itch.io' }
+	] as const);
 </script>
 
-<svelte:head><title>Browse game jams</title></svelte:head>
+<svelte:head><title>Browse game jams · Jamigos</title></svelte:head>
 
 <div class="flex flex-wrap items-end justify-between gap-4">
 	<div>
@@ -117,13 +117,17 @@
 		aria-label="Sort jams"
 		value={data.filters.sort}
 		onchange={(e) =>
-			goto(href({ sort: e.currentTarget.value === 'soon' ? null : e.currentTarget.value }), {
+			goto(href({ sort: e.currentTarget.value === 'active' ? null : e.currentTarget.value }), {
 				reset: false
 			})}
 	>
 		{#each sorts as s (s.id)}<option value={s.id}>{s.label}</option>{/each}
 	</select>
 </div>
+
+{#if data.filters.q}
+	<p class="mt-3 text-sm text-muted">Showing matches from all current and upcoming jams.</p>
+{/if}
 
 {#if data.jams.length}
 	<div class="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3">

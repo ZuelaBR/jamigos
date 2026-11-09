@@ -1,8 +1,7 @@
-import { readFileSync, readdirSync } from 'node:fs';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { getPlatformProxy } from 'wrangler';
 import { and, eq } from 'drizzle-orm';
-import { getDb, type Db } from '../db/index.ts';
+import type { Db } from '../db/index.ts';
+import { createTestDb } from '../testing/d1.ts';
 import { jams, lfgPosts, teamMembers, teamRequests, teams, users, type Jam } from '../db/schema.ts';
 import {
 	ServiceError,
@@ -15,22 +14,14 @@ import {
 } from './teams.ts';
 
 // Real (in-memory) D1 via wrangler, with the generated migrations applied.
-let proxy: Awaited<ReturnType<typeof getPlatformProxy<Env>>>;
 let db: Db;
+let dispose: () => Promise<void>;
 
 beforeAll(async () => {
-	proxy = await getPlatformProxy<Env>({ persist: false });
-	for (const file of readdirSync('drizzle')
-		.filter((f) => f.endsWith('.sql'))
-		.sort()) {
-		for (const stmt of readFileSync(`drizzle/${file}`, 'utf8').split('--> statement-breakpoint')) {
-			if (stmt.trim()) await proxy.env.DB.prepare(stmt).run();
-		}
-	}
-	db = getDb(proxy.env.DB);
+	({ db, dispose } = await createTestDb());
 });
 
-afterAll(() => proxy?.dispose());
+afterAll(() => dispose?.());
 
 let jam: Jam;
 let otherJam: Jam;

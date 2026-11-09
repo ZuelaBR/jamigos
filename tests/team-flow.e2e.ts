@@ -50,10 +50,8 @@ test('two jammers find each other and form a team', async ({ browser }, testInfo
 
 	// Bob posts that he's looking for a team.
 	await go(bob, `/jams/${slug}`);
-	await expect(bob.getByRole('link', { name: /Jam page on itch.io/ })).toHaveAttribute(
-		'href',
-		`https://itch.io/jam/${slug}`
-	);
+	// The itch.io link is a button on desktop and an inline link on mobile.
+	await expect(bob.locator(`a[href="https://itch.io/jam/${slug}"]:visible`)).toHaveCount(1);
 	await bob.getByRole('button', { name: /I'm looking for a team/ }).click();
 	await bob.getByLabel('Anything teams should know?').fill('Godot dev, free all weekend');
 	await bob.getByRole('button', { name: 'Post', exact: true }).click();

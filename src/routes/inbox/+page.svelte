@@ -10,7 +10,7 @@
 	let { data }: PageProps = $props();
 </script>
 
-<svelte:head><title>Inbox</title></svelte:head>
+<svelte:head><title>Inbox · Jamigos</title></svelte:head>
 
 <div class="mx-auto max-w-3xl">
 	<h1 class="text-2xl font-bold">Inbox</h1>

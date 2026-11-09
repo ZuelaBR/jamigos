@@ -23,13 +23,14 @@
 	--input-focus: light-dark(#361275, #fff);
 	--text: light-dark(#222, #eee);
 	--muted: light-dark(#606060, #ababab);
-	/* itch uses #FF2449 for buttons and #da2c49 for links; the link shade is readable on white. */
+	/* Links use a deeper red than the coral so small text stays readable on white. */
 	--accent: light-dark(#da2c49, #ff4d68);
 	--accent-hover: light-dark(#b81f3a, #ff7088);
-	--button: #ff2449;
-	--button-hover: #ff2e51;
-	--button-active: #e1193b;
-	--button-shadow: #c3223e;
+	/* Jamigos brand coral (brand kit palette); the kit specifies charcoal text on coral. */
+	--button: #fa5c5c;
+	--button-hover: #fb6e6e;
+	--button-active: #ec4b4b;
+	--on-button: #222;
 	--ok: light-dark(#1a7f37, #4ade80);
 	--warn: light-dark(#9a6700, #fbbf24);
 	/* light-dark() only takes colours, so only the shadow colour switches. */
@@ -44,6 +45,29 @@
 	color-scheme: dark;
 }
 
+/*
+ * Theme-specific artwork (the brand kit has light and dark logo variants). Follows the forced
+ * theme or, with no preference, the OS. Unlayered on purpose so display utilities can't override
+ * it: put sizing/visibility classes on a wrapper, not on the images themselves.
+ */
+.only-dark {
+	display: none;
+}
+:root[data-theme='dark'] .only-light {
+	display: none;
+}
+:root[data-theme='dark'] .only-dark {
+	display: revert-layer;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) .only-light {
+		display: none;
+	}
+	:root:not([data-theme='light']) .only-dark {
+		display: revert-layer;
+	}
+}
+
 @theme inline {
 	--font-sans: 'Lato', ui-sans-serif, system-ui, sans-serif;
 	--color-bg: var(--bg);
@@ -55,6 +79,7 @@
 	--color-accent: var(--accent);
 	--color-accent-hover: var(--accent-hover);
 	--color-button: var(--button);
+	--color-on-button: var(--on-button);
 	--color-ok: var(--ok);
 	--color-warn: var(--warn);
 }
@@ -118,11 +143,11 @@
 	@apply inline-flex h-[35px] cursor-pointer items-center justify-center gap-2 rounded-md px-3 text-sm font-bold whitespace-nowrap transition-colors select-none disabled:cursor-not-allowed disabled:opacity-50;
 }
 
-/* itch.io's red `.button` */
+/* Primary button: itch.io's `.button` shape in the Jamigos coral. */
 @utility btn-primary {
-	@apply btn border border-black/10 text-white;
+	@apply btn border border-black/10;
+	color: var(--on-button);
 	background: var(--button);
-	text-shadow: 0 1px 0 var(--button-shadow);
 	box-shadow: inset 0 0 1px rgb(255 255 255 / 0.21);
 	&:hover:not(:disabled) {
 		background: var(--button-hover);
@@ -143,6 +168,16 @@
 	&:active:not(:disabled) {
 		transform: translateY(1px);
 	}
+}
+
+@utility btn-lg {
+	@apply h-12 px-7 text-base;
+}
+
+/* Full-width background band inside the centred page column (content keeps its own max-width). */
+@utility bleed {
+	margin-inline: calc(50% - 50vw);
+	padding-inline: 1rem;
 }
 
 @utility btn-sm {

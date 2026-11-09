@@ -16,7 +16,7 @@
 	}
 </script>
 
-<svelte:head><title>{p.displayName || p.username} · Jammer profile</title></svelte:head>
+<svelte:head><title>{p.displayName || p.username} · Jamigos</title></svelte:head>
 
 <div class="mx-auto grid max-w-4xl gap-6 md:grid-cols-[1fr_280px]">
 	<section class="card p-6">

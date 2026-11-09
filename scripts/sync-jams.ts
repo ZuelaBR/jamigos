@@ -1,7 +1,7 @@
 /**
  * Crawls itch.io's public jam listings and pushes them to the app.
  *
- *   SYNC_URL=https://jammates.example.workers.dev SYNC_SECRET=… npm run sync:jams
+ *   SYNC_URL=https://jamigos.example.workers.dev SYNC_SECRET=… npm run sync:jams
  *
  * Env:
  *   SYNC_URL       App base URL (default http://localhost:5173)
@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { parseJamListing, type ParsedJam } from '../src/lib/jams/parse.ts';
 
 const LISTINGS = ['in-progress', 'upcoming'] as const;
-const USER_AGENT = 'JamMates/1.0 (+https://github.com/; game jam team finder, polite crawler)';
+const USER_AGENT = 'Jamigos/1.0 (+https://github.com/; game jam team finder, polite crawler)';
 
 function devSecret() {
 	try {
