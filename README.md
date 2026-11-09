@@ -47,20 +47,55 @@ We request only the `profile:me` scope. The access token is used once to read th
 
 ## Deploying to Cloudflare (free)
 
-```sh
-npx wrangler login
-npx wrangler d1 create jamigos          # copy the database_id into wrangler.jsonc
-npx wrangler secret put SYNC_SECRET      # any long random string
-# set vars.ITCH_CLIENT_ID in wrangler.jsonc, then:
-npm run deploy                           # build + remote migrations + wrangler deploy
-```
+Follow these steps in order. The scheduled jam sync is the **last** step, because it needs the deployed app.
+
+1. **Create the database and deploy:**
+
+   ```sh
+   npx wrangler login
+   npx wrangler d1 create jamigos          # copy the database_id into wrangler.jsonc
+   npx wrangler secret put SYNC_SECRET      # any long random string; keep it for step 3
+   # set vars.ITCH_CLIENT_ID in wrangler.jsonc (see "itch.io login" above), then:
+   npm run deploy                           # build + remote migrations + wrangler deploy
+   ```
+
+2. **Check the site** at the URL wrangler printed, for example `https://jamigos.<you>.workers.dev`.
+3. **Give GitHub what the sync needs**, using the same `SYNC_SECRET` value as in step 1:
+
+   ```sh
+   gh variable set SYNC_URL --body https://jamigos.<you>.workers.dev
+   gh secret set SYNC_SECRET
+   ```
+
+4. **Turn on the scheduled sync**, then start a first run straight away:
+
+   ```sh
+   npm run sync:enable   # checks steps 1–3 first and refuses if anything is missing
+   npm run sync:run
+   ```
 
 ### Scheduled jam sync
 
-`.github/workflows/sync-jams.yml` runs every 6 hours, and you can also trigger it from the Actions tab. In the GitHub repo settings, add:
+> **Status: disabled until the app is deployed.** Without a deployed app, every run would fail and GitHub would email you every 6 hours. Check the current state at any time with `npm run sync:status`.
 
-- the **variable** `SYNC_URL`: your deployed URL, for example `https://jamigos.<you>.workers.dev`
-- the **secret** `SYNC_SECRET`: the same value you gave wrangler
+`.github/workflows/sync-jams.yml` crawls itch.io's jam listings every 6 hours and pushes them to the app. It needs two things in the GitHub repository:
+
+| Name          | Kind                 | Value                                                       |
+| ------------- | -------------------- | ----------------------------------------------------------- |
+| `SYNC_URL`    | Actions **variable** | your deployed app, e.g. `https://jamigos.<you>.workers.dev` |
+| `SYNC_SECRET` | Actions **secret**   | the same value as the Worker secret `SYNC_SECRET`           |
+
+Manage it with these commands (they need the GitHub CLI, signed in with `gh auth login`):
+
+| Command                | What it does                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `npm run sync:status`  | Shows whether the schedule is on, whether both settings exist, and the recent runs                           |
+| `npm run sync:check`   | Verifies the variable, the secret, that the app responds, and that its sync endpoint exists; changes nothing |
+| `npm run sync:enable`  | Runs the same checks, then turns the schedule on. It refuses if anything is missing                          |
+| `npm run sync:disable` | Turns the schedule off (for example while you migrate or debug)                                              |
+| `npm run sync:run`     | Triggers one sync now (the schedule must be on); follow it with `gh run watch`                               |
+
+If someone turns the workflow on from GitHub's Actions tab before it's configured, its first step stops with a clear "Jam sync is not configured" error rather than a confusing crawler failure.
 
 The crawler runs in GitHub Actions, not in a Worker, because itch.io rate-limits aggressively. Polite crawling needs long waits between requests, and parsing needs more CPU than a free Worker gets. If itch.io changes its markup, the job **fails loudly** (it reports 0 jams parsed), so GitHub emails you. To update the parser, refresh the fixtures in `src/lib/jams/fixtures/` and run the tests.
 

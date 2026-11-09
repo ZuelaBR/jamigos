@@ -1,3 +1,8 @@
+# Crawls itch.io's jam listings every 6 hours and pushes them to the deployed app.
+#
+# ⚠ This workflow is DISABLED until the app is deployed. Turn it on with `npm run sync:enable`,
+#   which first checks that everything it needs is in place. Full steps: README → "Scheduled jam sync".
+#   Needs: repository variable SYNC_URL (the deployed app) and repository secret SYNC_SECRET.
 name: Sync itch.io jams
 
 on:
@@ -14,6 +19,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Check configuration
+        env:
+          SYNC_URL: ${{ vars.SYNC_URL }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+        run: |
+          missing=""
+          [ -n "$SYNC_URL" ] || missing="$missing repository variable SYNC_URL;"
+          [ -n "$SYNC_SECRET" ] || missing="$missing repository secret SYNC_SECRET;"
+          if [ -n "$missing" ]; then
+            echo "::error title=Jam sync is not configured::Missing:$missing see README → Scheduled jam sync (or run npm run sync:check locally)."
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:

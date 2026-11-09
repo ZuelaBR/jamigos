@@ -25,7 +25,12 @@
 		"db:migrate:local": "wrangler d1 migrations apply jamigos --local",
 		"db:migrate:remote": "wrangler d1 migrations apply jamigos --remote",
 		"sync:jams": "tsx scripts/sync-jams.ts",
-		"deploy": "npm run build && npm run db:migrate:remote && wrangler deploy"
+		"deploy": "npm run build && npm run db:migrate:remote && wrangler deploy",
+		"sync:status": "bash scripts/jam-sync.sh status",
+		"sync:check": "bash scripts/jam-sync.sh check",
+		"sync:enable": "bash scripts/jam-sync.sh enable",
+		"sync:disable": "bash scripts/jam-sync.sh disable",
+		"sync:run": "bash scripts/jam-sync.sh run"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
