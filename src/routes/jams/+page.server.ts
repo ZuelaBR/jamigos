@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { jamSlugFromUrl, parseJamPage } from '#lib/jams/parse.ts';
+import { parsePage } from '#lib/server/validation/pagination.ts';
 import { requireUserForAction } from '#lib/server/guards.ts';
 import {
 	getJamBySlug,
@@ -18,7 +19,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	// Default to where people are actually teaming up; "closing soonest" buried the useful jams.
 	const sort: JamSort = sortParam === 'popular' || sortParam === 'soon' ? sortParam : 'active';
 	const q = (url.searchParams.get('q') ?? '').trim().slice(0, 80);
-	const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+	const page = parsePage(url.searchParams.get('page'));
 
 	const rows = await listJams(locals.db, {
 		tab,

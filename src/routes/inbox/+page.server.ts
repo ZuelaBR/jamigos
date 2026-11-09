@@ -8,17 +8,14 @@ import {
 	respondToRequest,
 	respondToTeamUp
 } from '#lib/server/services/teams.ts';
+import { parsePage } from '#lib/server/validation/pagination.ts';
 import { str } from '#lib/server/validation/form.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const user = requireUser(event);
 	const db = event.locals.db;
-	const requestedPage = Number(event.url.searchParams.get('updatesPage') ?? 1);
-	const updatesPage =
-		Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 10000
-			? requestedPage
-			: 1;
+	const updatesPage = parsePage(event.url.searchParams.get('updatesPage'));
 	const pageSize = 20;
 	const [items, rows] = await Promise.all([
 		inboxItems(db, user.id),
