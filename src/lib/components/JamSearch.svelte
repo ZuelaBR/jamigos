@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import { goto } from '$app/navigation';
 	import { jamTiming } from '#lib/time.ts';
 
@@ -85,17 +86,11 @@
 >
 	<label for="jam-search" class="sr-only">Search jams</label>
 	<div class="relative">
-		<svg
+		<SearchIcon
+			size={20}
 			class="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted"
-			viewBox="0 0 24 24"
-			width="20"
-			height="20"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2.2"
-			stroke-linecap="round"
-			aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg
-		>
+			aria-hidden="true"
+		/>
 		<!-- svelte-ignore a11y_autofocus -->
 		<input
 			id="jam-search"

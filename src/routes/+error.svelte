@@ -5,7 +5,22 @@
 <svelte:head><title>{page.status} · Something went wrong · Jamigos</title></svelte:head>
 
 <div class="mx-auto max-w-md py-16 text-center">
-	<p class="text-6xl" aria-hidden="true">{page.status === 404 ? '🗺️' : '💥'}</p>
+	<div class="mx-auto h-28 w-28" aria-hidden="true">
+		<img
+			class="only-light h-full w-full"
+			src="/brand/icons/jamigos-team-light.svg"
+			alt=""
+			width="112"
+			height="112"
+		/>
+		<img
+			class="only-dark h-full w-full"
+			src="/brand/icons/jamigos-team-dark.svg"
+			alt=""
+			width="112"
+			height="112"
+		/>
+	</div>
 	<h1 class="mt-4 text-2xl font-bold">
 		{page.status === 404 ? 'Nothing here' : 'Something went wrong'}
 	</h1>

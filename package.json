@@ -57,6 +57,7 @@
 	},
 	"dependencies": {
 		"@fontsource/lato": "^5.3.0",
+		"@lucide/svelte": "^1.70.0",
 		"zod": "^4.6.7"
 	},
 	"allowScripts": {

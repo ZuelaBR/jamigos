@@ -13,16 +13,6 @@ export const ROLE_LABELS: Record<Role, string> = {
 	producer: 'Producer'
 };
 
-export const ROLE_ICONS: Record<Role, string> = {
-	code: '⌨️',
-	art: '🎨',
-	audio: '🎵',
-	design: '🧩',
-	writing: '✍️',
-	qa: '🐞',
-	producer: '📋'
-};
-
 export const EXPERIENCES = ['first_jam', 'some', 'veteran'] as const;
 export type Experience = (typeof EXPERIENCES)[number];
 

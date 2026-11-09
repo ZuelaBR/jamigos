@@ -9,7 +9,7 @@
 
 <div class="mx-auto max-w-2xl">
 	<h1 class="text-2xl font-bold sm:text-3xl">
-		Welcome, {data.user?.displayName || data.user?.username}! 👋
+		Welcome, {data.user?.displayName || data.user?.username}!
 	</h1>
 	<p class="mt-2 text-muted">
 		Tell other jammers what you're good at. It takes about a minute, and you can change it any time.

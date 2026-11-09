@@ -2,6 +2,13 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import Check from '@lucide/svelte/icons/check';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
+	import Hand from '@lucide/svelte/icons/hand';
+	import Mail from '@lucide/svelte/icons/mail';
+	import PartyPopper from '@lucide/svelte/icons/party-popper';
+	import UserRoundSearch from '@lucide/svelte/icons/user-round-search';
+	import Users from '@lucide/svelte/icons/users';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import Modal from '#lib/components/Modal.svelte';
 	import PlayerCard from '#lib/components/PlayerCard.svelte';
@@ -152,9 +159,14 @@
 		{:else if myTeam}
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<p class="text-sm">
-					You're on <a class="font-semibold text-accent hover:underline" href="/teams/{myTeam.id}"
+					<PartyPopper
+						size={16}
+						class="mr-1 inline-block align-[-3px] text-accent"
+						aria-hidden="true"
+					/>You're on
+					<a class="font-semibold text-accent hover:underline" href="/teams/{myTeam.id}"
 						>{myTeam.name}</a
-					> for this jam. 🎉
+					> for this jam.
 				</p>
 				<a href="/teams/{myTeam.id}" class="btn-ghost btn-sm">Manage team</a>
 			</div>
@@ -162,7 +174,11 @@
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<p class="text-sm">
 					{#if viewer?.myPost}
-						✅ You're listed as <strong>looking for a team</strong>.
+						<CircleCheck
+							size={16}
+							class="mr-1 inline-block align-[-3px] text-ok"
+							aria-hidden="true"
+						/>You're listed as <strong>looking for a team</strong>.
 					{:else}
 						Not on a team yet. Let others know you're available, or start your own.
 					{/if}
@@ -174,8 +190,8 @@
 							<button class="btn-ghost btn-sm">Remove</button>
 						</form>
 					{:else}
-						<button class="btn-primary btn-sm" onclick={() => (lfgOpen = true)}
-							>🙋 I'm looking for a team</button
+						<button class="btn-primary btn-sm" onclick={() => (lfgOpen = true)}>
+							<Hand size={15} aria-hidden="true" />I'm looking for a team</button
 						>
 					{/if}
 					<button class="btn-ghost btn-sm" onclick={() => (teamOpen = true)}>Start a team</button>
@@ -187,7 +203,13 @@
 			<div
 				class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/50 bg-accent/10 px-3 py-2"
 			>
-				<p class="text-sm">📨 <strong>{teamName(invite.teamId)}</strong> invited you to join!</p>
+				<p class="text-sm">
+					<Mail
+						size={16}
+						class="mr-1 inline-block align-[-3px] text-accent"
+						aria-hidden="true"
+					/><strong>{teamName(invite.teamId)}</strong> invited you to join!
+				</p>
 				<form method="POST" action="?/respond" class="flex gap-2" use:enhance={withToasts()}>
 					<input type="hidden" name="requestId" value={invite.requestId} />
 					<button class="btn-primary btn-sm" name="accept" value="1">Accept</button>
@@ -205,21 +227,25 @@
 			role="tab"
 			aria-selected={tab === 'players'}
 			onclick={() => setParam('tab', defaultTab === 'players' ? null : 'players')}
-			class="rounded-md px-3 py-1.5 text-sm font-medium {tab === 'players'
+			class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium {tab ===
+			'players'
 				? 'bg-surface-2'
 				: 'text-muted hover:text-text'}"
 		>
-			🙋 Looking for a team <span class="ml-1 text-muted">{board.posts.length}</span>
+			<UserRoundSearch size={15} aria-hidden="true" />Looking for a team
+			<span class="text-muted">{board.posts.length}</span>
 		</button>
 		<button
 			role="tab"
 			aria-selected={tab === 'teams'}
 			onclick={() => setParam('tab', defaultTab === 'teams' ? null : 'teams')}
-			class="rounded-md px-3 py-1.5 text-sm font-medium {tab === 'teams'
+			class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium {tab ===
+			'teams'
 				? 'bg-surface-2'
 				: 'text-muted hover:text-text'}"
 		>
-			👥 Teams <span class="ml-1 text-muted">{board.teams.length}</span>
+			<Users size={15} aria-hidden="true" />Teams
+			<span class="text-muted">{board.teams.length}</span>
 		</button>
 	</div>
 
@@ -284,7 +310,9 @@
 								{#if inviteId}
 									<form method="POST" action="?/cancel" use:enhance={withToasts()}>
 										<input type="hidden" name="requestId" value={inviteId} />
-										<button class="btn-ghost btn-sm" title="Cancel invite">✓ Invited · Undo</button>
+										<button class="btn-ghost btn-sm" title="Cancel invite"
+											><Check size={14} aria-hidden="true" />Invited · Undo</button
+										>
 									</form>
 								{:else}
 									<button class="btn-primary btn-sm" onclick={() => (inviteUser = post.user)}
@@ -298,7 +326,7 @@
 			</div>
 		{:else}
 			<EmptyState
-				icon="🙋"
+				icon={UserRoundSearch}
 				title={board.posts.length ? 'Nobody matches these filters' : 'Nobody is looking yet'}
 			>
 				{#if board.posts.length}
@@ -320,7 +348,7 @@
 								<form method="POST" action="?/cancel" use:enhance={withToasts()}>
 									<input type="hidden" name="requestId" value={requestId} />
 									<button class="btn-ghost btn-sm" title="Withdraw request"
-										>✓ Requested · Undo</button
+										><Check size={14} aria-hidden="true" />Requested · Undo</button
 									>
 								</form>
 							{:else}
@@ -335,7 +363,7 @@
 		</div>
 	{:else}
 		<EmptyState
-			icon="👥"
+			icon={Users}
 			title={board.teams.length ? 'No teams match these filters' : 'No teams yet'}
 		>
 			{#if board.teams.length}

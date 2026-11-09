@@ -22,7 +22,7 @@ export const actions: Actions = {
 				user.id,
 				accept
 			);
-			return { toast: accepted ? `Done! Welcome to ${team.name}. 🎉` : 'Declined.' };
+			return { toast: accepted ? `Done! Welcome to ${team.name}.` : 'Declined.' };
 		});
 	},
 	cancel: async (event) => {

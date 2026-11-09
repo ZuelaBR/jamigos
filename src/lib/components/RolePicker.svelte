@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ROLES, ROLE_ICONS, ROLE_LABELS, type Role } from '#lib/profile.ts';
+	import RoleIcon from './RoleIcon.svelte';
+	import { ROLES, ROLE_LABELS, type Role } from '#lib/profile.ts';
 
 	let { name, selected = $bindable([]) }: { name: string; selected?: Role[] } = $props();
 </script>
@@ -8,7 +9,7 @@
 	{#each ROLES as role (role)}
 		<label class="choice">
 			<input type="checkbox" {name} value={role} bind:group={selected} class="sr-only" />
-			<span aria-hidden="true">{ROLE_ICONS[role]}</span>
+			<RoleIcon {role} size={15} />
 			{ROLE_LABELS[role]}
 		</label>
 	{/each}

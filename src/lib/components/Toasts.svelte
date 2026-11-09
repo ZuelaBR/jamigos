@@ -1,4 +1,6 @@
 <script lang="ts">
+	import CircleAlert from '@lucide/svelte/icons/circle-alert';
+	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import { fly } from 'svelte/transition';
 	import { dismiss, toasts } from '#lib/toast.svelte.ts';
 </script>
@@ -17,9 +19,11 @@
 				? 'border-l-accent'
 				: 'border-l-ok'}"
 		>
-			<span aria-hidden="true" class={t.kind === 'error' ? 'text-accent' : 'text-ok'}
-				>{t.kind === 'error' ? '⚠' : '✓'}</span
-			>
+			{#if t.kind === 'error'}
+				<CircleAlert size={18} class="shrink-0 text-accent" aria-hidden="true" />
+			{:else}
+				<CircleCheck size={18} class="shrink-0 text-ok" aria-hidden="true" />
+			{/if}
 			{t.message}
 		</button>
 	{/each}

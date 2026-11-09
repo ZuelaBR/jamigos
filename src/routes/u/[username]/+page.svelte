@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Medal from '@lucide/svelte/icons/medal';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import OverlapBadge from '#lib/components/OverlapBadge.svelte';
 	import RoleChip from '#lib/components/RoleChip.svelte';
@@ -33,7 +34,9 @@
 					@{p.username} on itch.io ↗
 				</a>
 				<div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-					<span class="text-xs text-muted">🏅 {EXPERIENCE_LABELS[p.experience]}</span>
+					<span class="inline-flex items-center gap-1.5 text-xs text-muted"
+						><Medal size={13} aria-hidden="true" />{EXPERIENCE_LABELS[p.experience]}</span
+					>
 					<OverlapBadge
 						timezone={p.timezone}
 						viewerTimezone={data.isMe ? null : data.user?.timezone}

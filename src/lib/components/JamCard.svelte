@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Gamepad2 from '@lucide/svelte/icons/gamepad-2';
 	import { jamTiming } from '#lib/time.ts';
 
 	let {
@@ -33,7 +34,9 @@
 				class="h-full w-full object-cover transition-transform group-hover:scale-105"
 			/>
 		{:else}
-			<div class="flex h-full items-center justify-center text-3xl" aria-hidden="true">🕹️</div>
+			<div class="flex h-full items-center justify-center text-muted" aria-hidden="true">
+				<Gamepad2 size={32} strokeWidth={1.5} />
+			</div>
 		{/if}
 	</div>
 	<div class="flex min-w-0 flex-1 flex-col">

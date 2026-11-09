@@ -154,7 +154,7 @@ export const actions: Actions = {
 				user.id,
 				accept
 			);
-			return { toast: accepted ? 'Welcome aboard! 🎉' : 'Declined.' };
+			return { toast: accepted ? 'Welcome aboard!' : 'Declined.' };
 		});
 	},
 

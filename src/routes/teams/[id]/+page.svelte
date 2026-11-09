@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Hourglass from '@lucide/svelte/icons/hourglass';
+	import Mail from '@lucide/svelte/icons/mail';
+	import PartyPopper from '@lucide/svelte/icons/party-popper';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import Avatar from '#lib/components/Avatar.svelte';
@@ -51,13 +54,21 @@
 
 {#if justCreated && data.isOwner}
 	<div class="mt-4 rounded-xl border border-ok/40 bg-ok/10 p-4 text-sm">
-		<strong>Team created! 🎉</strong> Next step: go to the
+		<PartyPopper
+			size={16}
+			class="mr-1.5 inline-block align-[-3px] text-ok"
+			aria-hidden="true"
+		/><strong>Team created!</strong> Next step: go to the
 		<a class="text-accent underline" href="/jams/{data.jam.slug}">"Looking for a team" list</a> and invite
 		people, or share this page.
 	</div>
 {:else if justJoined && data.isMember}
 	<div class="mt-4 rounded-xl border border-ok/40 bg-ok/10 p-4 text-sm">
-		<strong>You're in! 🎉</strong> Say hi to your teammates. Their contact details are below.
+		<PartyPopper
+			size={16}
+			class="mr-1.5 inline-block align-[-3px] text-ok"
+			aria-hidden="true"
+		/><strong>You're in!</strong> Say hi to your teammates. Their contact details are below.
 	</div>
 {/if}
 
@@ -200,7 +211,13 @@
 					</form>
 				{/if}
 			{:else if myPending?.kind === 'invite'}
-				<p class="text-sm">📨 You've been invited to join!</p>
+				<p class="text-sm">
+					<Mail
+						size={16}
+						class="mr-1.5 inline-block align-[-3px] text-accent"
+						aria-hidden="true"
+					/>You've been invited to join!
+				</p>
 				{#if myPending.message}<p class="mt-2 rounded-lg bg-surface-2 p-3 text-sm italic">
 						"{myPending.message}"
 					</p>{/if}
@@ -210,7 +227,13 @@
 					<button class="btn-ghost flex-1" name="accept" value="0">Decline</button>
 				</form>
 			{:else if myPending?.kind === 'request'}
-				<p class="text-sm">⏳ Your request is waiting for the owner.</p>
+				<p class="text-sm">
+					<Hourglass
+						size={16}
+						class="mr-1.5 inline-block align-[-3px] text-muted"
+						aria-hidden="true"
+					/>Your request is waiting for the owner.
+				</p>
 				<form method="POST" action="?/cancel" class="mt-3" use:enhance={withToasts()}>
 					<input type="hidden" name="requestId" value={myPending.id} />
 					<button class="btn-ghost w-full">Withdraw request</button>

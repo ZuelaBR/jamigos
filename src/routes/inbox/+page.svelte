@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Avatar from '#lib/components/Avatar.svelte';
+	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import Mail from '@lucide/svelte/icons/mail';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import RoleChip from '#lib/components/RoleChip.svelte';
 	import { withToasts } from '#lib/forms.ts';
@@ -42,8 +44,8 @@
 							</div>
 						{:else}
 							<span
-								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-lg"
-								aria-hidden="true">📨</span
+								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent"
+								aria-hidden="true"><Mail size={18} /></span
 							>
 							<div class="min-w-0">
 								<p class="text-sm">
@@ -68,7 +70,7 @@
 			{/each}
 		</ul>
 	{:else}
-		<EmptyState icon="📭" title="You're all caught up">
+		<EmptyState icon={InboxIcon} title="You're all caught up">
 			Invites and join requests for your teams will show up here. <a
 				class="text-accent hover:underline"
 				href="/jams">Browse jams</a

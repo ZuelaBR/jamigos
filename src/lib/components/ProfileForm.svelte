@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { onMount } from 'svelte';
+	import RoleIcon from './RoleIcon.svelte';
 	import TagInput from './TagInput.svelte';
 	import {
 		EXPERIENCES,
 		EXPERIENCE_LABELS,
 		ROLES,
-		ROLE_ICONS,
 		ROLE_LABELS,
 		TOOL_SUGGESTIONS,
 		type Experience,
@@ -126,7 +126,7 @@
 				{#each ROLES as role (role)}
 					<label class="choice w-full">
 						<input type="checkbox" name="roles" value={role} bind:group={roles} class="sr-only" />
-						<span aria-hidden="true">{ROLE_ICONS[role]}</span>
+						<RoleIcon {role} size={16} />
 						{ROLE_LABELS[role]}
 					</label>
 				{/each}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Clock from '@lucide/svelte/icons/clock';
 	import { formatOffset, offsetMinutes, overlapHours, overlapLevel } from '#lib/tz.ts';
 
 	let { timezone, viewerTimezone }: { timezone: string; viewerTimezone?: string | null } = $props();
@@ -15,7 +16,7 @@
 	class="inline-flex items-center gap-1.5 text-xs text-muted"
 	title={timezone.replaceAll('_', ' ')}
 >
-	<span aria-hidden="true">🕒</span>{formatOffset(offset)}
+	<Clock size={13} class="shrink-0" aria-hidden="true" />{formatOffset(offset)}
 	{#if hours !== null && level}
 		<span aria-hidden="true">·</span>
 		<span

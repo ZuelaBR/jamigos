@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import Search from '@lucide/svelte/icons/search';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import JamCard from '#lib/components/JamCard.svelte';
 	import { toast } from '#lib/toast.svelte.ts';
@@ -144,7 +145,7 @@
 {:else}
 	<div class="mt-6">
 		<EmptyState
-			icon="🔍"
+			icon={Search}
 			title={data.filters.q ? `No jams match "${data.filters.q}"` : 'No jams here yet'}
 		>
 			{#if data.filters.q}

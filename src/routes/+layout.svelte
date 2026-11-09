@@ -2,6 +2,7 @@
 	import './layout.css';
 	import { onMount } from 'svelte';
 	import { page, navigating } from '$app/state';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import Toasts from '#lib/components/Toasts.svelte';
@@ -130,16 +131,7 @@
 							<span class="hidden max-w-28 truncate text-sm font-bold sm:block"
 								>{data.user.displayName || data.user.username}</span
 							>
-							<svg
-								viewBox="0 0 24 24"
-								width="14"
-								height="14"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.5"
-								class="text-muted"
-								aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg
-							>
+							<ChevronDown size={14} strokeWidth={2.5} class="text-muted" aria-hidden="true" />
 						</button>
 						{#if menuOpen}
 							<div

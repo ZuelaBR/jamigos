@@ -4,7 +4,15 @@
 	import PlayerCard from '#lib/components/PlayerCard.svelte';
 	import TeamCard from '#lib/components/TeamCard.svelte';
 	import { APP_NAME, TAGLINE } from '#lib/config.ts';
-	import { ROLES, ROLE_ICONS, ROLE_LABELS } from '#lib/profile.ts';
+	import CalendarDays from '@lucide/svelte/icons/calendar-days';
+	import Check from '@lucide/svelte/icons/check';
+	import Clock from '@lucide/svelte/icons/clock';
+	import ShieldCheck from '@lucide/svelte/icons/shield-check';
+	import UserPlus from '@lucide/svelte/icons/user-plus';
+	import UserRoundSearch from '@lucide/svelte/icons/user-round-search';
+	import Users from '@lucide/svelte/icons/users';
+	import RoleIcon from '#lib/components/RoleIcon.svelte';
+	import { ROLES, ROLE_LABELS } from '#lib/profile.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -33,6 +41,50 @@
 			{ id: '2', username: 'mika', displayName: 'Mika', avatarUrl: null }
 		]
 	};
+
+	const audiences = [
+		{
+			icon: UserRoundSearch,
+			title: 'Looking for a team?',
+			points: [
+				'Post once per jam and let teams find you',
+				'Filter teams by the roles they still need',
+				'Ask to join with a short hello'
+			]
+		},
+		{
+			icon: UserPlus,
+			title: 'Building a team?',
+			points: [
+				"List the roles you're missing",
+				'Browse artists, coders and musicians who are free',
+				'Invite them and manage requests in one inbox'
+			]
+		}
+	];
+
+	const features = [
+		{
+			icon: CalendarDays,
+			title: 'Organised by jam',
+			text: 'Jams are imported from itch.io automatically, so every jam already has a board waiting.'
+		},
+		{
+			icon: Users,
+			title: 'Find the right roles',
+			text: 'Art, code, audio, design, writing, QA. See at a glance who does what and which teams need it.'
+		},
+		{
+			icon: Clock,
+			title: 'Timezones that work',
+			text: 'See how many waking hours you share with each person before you team up.'
+		},
+		{
+			icon: ShieldCheck,
+			title: 'Real itch.io people',
+			text: 'Everyone signs in with itch.io. Contact details are only shown to signed-in users.'
+		}
+	];
 
 	const faqs = [
 		['Is Jamigos free?', 'Yes, completely. There are no paid features.'],
@@ -130,7 +182,7 @@
 									? 'border-accent bg-accent/10 font-bold'
 									: 'border-border text-muted'}"
 							>
-								<span aria-hidden="true">{ROLE_ICONS[role]}</span>{ROLE_LABELS[role]}
+								<RoleIcon {role} size={13} />{ROLE_LABELS[role]}
 							</span>
 						{/each}
 					</div>
@@ -139,7 +191,9 @@
 							<span class="rounded-md bg-surface-2 px-2 py-0.5 font-bold">{tool}</span>
 						{/each}
 					</div>
-					<p class="mt-3 text-xs text-muted">🕒 Europe/Berlin · UTC+1</p>
+					<p class="mt-3 flex items-center gap-1.5 text-xs text-muted">
+						<Clock size={13} aria-hidden="true" />Europe/Berlin · UTC+1
+					</p>
 				</div>
 			</li>
 
@@ -194,71 +248,42 @@
 	class="mx-auto grid max-w-5xl gap-4 py-14 sm:py-20 md:grid-cols-2"
 	aria-label="Who it's for"
 >
-	<div class="card p-6 sm:p-8">
-		<p class="text-3xl" aria-hidden="true">🙋</p>
-		<h2 class="mt-3 text-2xl font-black">Looking for a team?</h2>
-		<ul class="mt-4 space-y-2 text-muted">
-			<li>✓ Post once per jam and let teams find you</li>
-			<li>✓ Filter teams by the roles they still need</li>
-			<li>✓ Ask to join with a short hello</li>
-		</ul>
-	</div>
-	<div class="card p-6 sm:p-8">
-		<p class="text-3xl" aria-hidden="true">🛠️</p>
-		<h2 class="mt-3 text-2xl font-black">Building a team?</h2>
-		<ul class="mt-4 space-y-2 text-muted">
-			<li>✓ List the roles you're missing</li>
-			<li>✓ Browse artists, coders and musicians who are free</li>
-			<li>✓ Invite them and manage requests in one inbox</li>
-		</ul>
-	</div>
+	{#each audiences as { icon: Icon, title, points } (title)}
+		<div class="card p-6 sm:p-8">
+			<span
+				class="flex h-12 w-12 items-center justify-center rounded-md bg-accent/10 text-accent"
+				aria-hidden="true"
+			>
+				<Icon size={24} />
+			</span>
+			<h2 class="mt-4 text-2xl font-black">{title}</h2>
+			<ul class="mt-4 space-y-2.5 text-muted">
+				{#each points as point (point)}
+					<li class="flex gap-2.5">
+						<Check size={18} class="mt-0.5 shrink-0 text-ok" aria-hidden="true" />{point}
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/each}
 </section>
 
 <!-- 4. Why Jamigos -->
 <section class="mx-auto max-w-6xl pb-14 sm:pb-20" aria-labelledby="why-title">
 	<h2 id="why-title" class="text-center text-3xl font-black sm:text-4xl">Made for game jams</h2>
 	<div class="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-		{#snippet feature(icon: string, title: string, text: string)}
+		{#each features as { icon: Icon, title, text } (title)}
 			<div>
 				<span
 					class="flex h-11 w-11 items-center justify-center rounded-md bg-accent/10 text-accent"
+					aria-hidden="true"
 				>
-					<svg
-						viewBox="0 0 24 24"
-						width="22"
-						height="22"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"><path d={icon} /></svg
-					>
+					<Icon size={22} />
 				</span>
 				<h3 class="mt-3 font-bold">{title}</h3>
 				<p class="mt-1 text-sm text-muted">{text}</p>
 			</div>
-		{/snippet}
-		{@render feature(
-			'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
-			'Organised by jam',
-			'Jams are imported from itch.io automatically, so every jam already has a board waiting.'
-		)}
-		{@render feature(
-			'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
-			'Find the right roles',
-			'Art, code, audio, design, writing, QA. See at a glance who does what and which teams need it.'
-		)}
-		{@render feature(
-			'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2',
-			'Timezones that work',
-			'See how many waking hours you share with each person before you team up.'
-		)}
-		{@render feature(
-			'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
-			'Real itch.io people',
-			'Everyone signs in with itch.io. Contact details are only shown to signed-in users.'
-		)}
+		{/each}
 	</div>
 </section>
 

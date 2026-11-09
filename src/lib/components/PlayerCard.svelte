@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Wrench from '@lucide/svelte/icons/wrench';
 	import type { Snippet } from 'svelte';
 	import Avatar from './Avatar.svelte';
 	import OverlapBadge from './OverlapBadge.svelte';
@@ -55,8 +56,10 @@
 	{#if message}<p class="line-clamp-4 text-sm whitespace-pre-line text-text/90">{message}</p>{/if}
 
 	{#if user.tools.length}
-		<p class="truncate text-xs text-muted" title={user.tools.join(', ')}>
-			🛠 {user.tools.join(' · ')}
+		<p class="flex items-center gap-1.5 text-xs text-muted" title={user.tools.join(', ')}>
+			<Wrench size={13} class="shrink-0" aria-hidden="true" /><span class="truncate"
+				>{user.tools.join(' · ')}</span
+			>
 		</p>
 	{/if}
 
