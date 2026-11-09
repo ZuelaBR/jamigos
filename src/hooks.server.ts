@@ -7,6 +7,7 @@ import {
 	setSessionCookie,
 	validateSession
 } from '#lib/server/auth/session.ts';
+import { THEME_COOKIE, parseTheme } from '#lib/theme.ts';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	if (!env.DB) throw new Error('D1 binding "DB" is missing (check wrangler.jsonc)');
@@ -27,5 +28,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	return resolve(event);
+	// Render the saved theme into <html data-theme> so the first paint is already correct.
+	const theme = parseTheme(event.cookies.get(THEME_COOKIE));
+	return resolve(event, {
+		transformPageChunk: ({ html }) => html.replace('%app.theme%', theme === 'system' ? '' : theme)
+	});
 };

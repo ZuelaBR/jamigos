@@ -86,19 +86,13 @@
 				<p class="text-sm text-muted">
 					Sign in to see how to contact {p.displayName || p.username}.
 				</p>
-				<a href={loginHref} class="mt-3 btn-primary w-full btn-sm">Sign in with itch.io</a>
+				<a href={loginHref} class="mt-3 btn-primary btn-sm w-full">Sign in with itch.io</a>
 			{:else}
 				<ul class="space-y-2 text-sm">
 					{#if p.contactDiscord}
 						<li class="flex items-center justify-between gap-2">
 							<span><span class="text-muted">Discord</span> · {p.contactDiscord}</span>
 							<button class="btn-ghost btn-sm" onclick={() => copy(p.contactDiscord!)}>Copy</button>
-						</li>
-					{/if}
-					{#if p.contactEmail}
-						<li>
-							<span class="text-muted">Email</span> ·
-							<a class="hover:text-accent" href="mailto:{p.contactEmail}">{p.contactEmail}</a>
 						</li>
 					{/if}
 					<li>

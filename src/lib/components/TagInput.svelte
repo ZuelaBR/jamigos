@@ -36,11 +36,11 @@
 	}
 </script>
 
-<div
-	class="flex flex-wrap gap-2 rounded-lg border border-border bg-surface-2 p-2 focus-within:border-accent"
->
+<div class="flex flex-wrap items-center gap-1.5 field">
 	{#each value as tag (tag)}
-		<span class="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs">
+		<span
+			class="inline-flex items-center gap-1 rounded-md bg-surface-2 px-2 py-0.5 text-xs font-bold"
+		>
 			{tag}
 			<button
 				type="button"
@@ -52,7 +52,7 @@
 		</span>
 	{/each}
 	<input
-		class="min-w-32 flex-1 border-0 bg-transparent p-1 text-sm focus:ring-0"
+		class="min-w-32 flex-1 border-0 bg-transparent p-0 shadow-none focus:shadow-none"
 		list={listId}
 		bind:value={draft}
 		{onkeydown}
@@ -69,11 +69,7 @@
 {#if remaining.length && value.length < max}
 	<div class="mt-2 flex flex-wrap gap-1.5">
 		{#each remaining.slice(0, 10) as s (s)}
-			<button
-				type="button"
-				class="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted hover:border-accent hover:text-text"
-				onclick={() => add(s)}
-			>
+			<button type="button" class="choice" onclick={() => add(s)}>
 				+ {s}
 			</button>
 		{/each}

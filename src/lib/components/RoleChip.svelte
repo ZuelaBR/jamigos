@@ -5,7 +5,7 @@
 </script>
 
 <span
-	class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap {variant ===
+	class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap {variant ===
 	'wanted'
 		? 'border border-dashed border-accent/60 text-accent'
 		: 'bg-surface-2 text-text'}"

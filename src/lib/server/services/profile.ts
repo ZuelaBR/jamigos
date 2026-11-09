@@ -18,7 +18,6 @@ export function profileValues(user: User) {
 		timezone: user.timezone,
 		bio: user.bio,
 		contactDiscord: user.contactDiscord,
-		contactEmail: user.contactEmail,
 		links: user.links
 	};
 }

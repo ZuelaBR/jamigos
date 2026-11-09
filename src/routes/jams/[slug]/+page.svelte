@@ -117,7 +117,7 @@
 				<span class="text-muted">{jam.joinedCount.toLocaleString('en')} joined on itch.io</span>
 			</div>
 		</div>
-		<a href={jam.url} target="_blank" rel="noopener" class="btn-ghost shrink-0 btn-sm"
+		<a href={jam.url} target="_blank" rel="noopener" class="btn-ghost btn-sm shrink-0"
 			>Jam page on itch.io ↗</a
 		>
 	</div>
@@ -208,7 +208,6 @@
 			aria-label="Filter by role"
 			value={roleFilter ?? ''}
 			onchange={(e) => setParam('role', e.currentTarget.value || null)}
-			class="py-1.5 text-sm"
 		>
 			<option value="">{tab === 'teams' ? 'Needs any role' : 'Any role'}</option>
 			{#each ROLES as r (r)}<option value={r}>{ROLE_LABELS[r]}</option>{/each}
@@ -218,7 +217,6 @@
 				aria-label="Filter by experience"
 				value={expFilter ?? ''}
 				onchange={(e) => setParam('exp', e.currentTarget.value || null)}
-				class="py-1.5 text-sm"
 			>
 				<option value="">Any experience</option>
 				{#each EXPERIENCES as x (x)}<option value={x}>{EXPERIENCE_LABELS[x]}</option>{/each}
@@ -227,7 +225,6 @@
 				<label class="flex cursor-pointer items-center gap-2 text-sm text-muted">
 					<input
 						type="checkbox"
-						class="rounded"
 						checked={overlapOnly}
 						onchange={(e) => setParam('overlap', e.currentTarget.checked ? '1' : null)}
 					/>
@@ -238,7 +235,6 @@
 			<label class="flex cursor-pointer items-center gap-2 text-sm text-muted">
 				<input
 					type="checkbox"
-					class="rounded"
 					checked={fitOnly}
 					onchange={(e) => setParam('fit', e.currentTarget.checked ? '1' : null)}
 				/>

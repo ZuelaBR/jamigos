@@ -126,8 +126,6 @@
 								onclick={() => copy(m.contactDiscord!)}>Discord: {m.contactDiscord}</button
 							>
 						{/if}
-						{#if m.contactEmail}<a class="btn-ghost btn-sm" href="mailto:{m.contactEmail}">Email</a
-							>{/if}
 						<a class="btn-ghost btn-sm" href={m.itchUrl} target="_blank" rel="noopener">itch.io ↗</a
 						>
 						{#if data.isOwner && m.id !== me?.id}
@@ -258,8 +256,8 @@
 							use:enhance={withToasts()}
 						>
 							<input type="hidden" name="requestId" value={r.id} />
-							<button class="btn-primary flex-1 btn-sm" name="accept" value="1">Accept</button>
-							<button class="btn-ghost flex-1 btn-sm" name="accept" value="0">Decline</button>
+							<button class="btn-primary btn-sm flex-1" name="accept" value="1">Accept</button>
+							<button class="btn-ghost btn-sm flex-1" name="accept" value="0">Decline</button>
 						</form>
 					</div>
 				{:else}

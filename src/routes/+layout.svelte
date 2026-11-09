@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { page, navigating } from '$app/state';
 	import Avatar from '#lib/components/Avatar.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import Toasts from '#lib/components/Toasts.svelte';
 	import { APP_NAME } from '#lib/config.ts';
 	import type { LayoutProps } from './$types';
@@ -36,43 +37,48 @@
 {/if}
 
 <div class="flex min-h-dvh flex-col">
-	<header class="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur">
-		<nav class="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-			<a href="/" class="flex items-center gap-2 font-bold tracking-tight">
-				<span class="text-xl" aria-hidden="true">🎮</span>
+	<!-- itch.io-style header: solid bar, 50px, faint shadow -->
+	<header class="sticky top-0 z-40 bg-surface" style="box-shadow: var(--header-shadow)">
+		<nav class="mx-auto flex h-[50px] max-w-6xl items-center gap-5 px-4">
+			<a href="/" class="flex items-center gap-2 text-[17px] font-black tracking-tight text-text">
+				<span
+					class="flex h-7 w-7 items-center justify-center rounded-md bg-button text-[13px] text-white"
+					aria-hidden="true">JM</span
+				>
 				<span>{APP_NAME}</span>
 			</a>
 			<a
 				href="/jams"
-				class="rounded-md px-2 py-1 text-sm hover:text-text {isActive('/jams')
-					? 'text-text'
+				class="text-[15px] hover:text-text {isActive('/jams')
+					? 'font-bold text-text'
 					: 'text-muted'}"
 			>
 				Browse jams
 			</a>
 
-			<div class="ml-auto flex items-center gap-2">
+			<div class="ml-auto flex items-center gap-3">
+				<ThemeToggle initial={data.theme} />
 				{#if data.user}
 					<a
 						href="/inbox"
-						class="relative rounded-md px-2 py-1 text-sm hover:text-text {isActive('/inbox')
-							? 'text-text'
+						class="relative text-[15px] hover:text-text {isActive('/inbox')
+							? 'font-bold text-text'
 							: 'text-muted'}"
 						aria-label={data.inboxCount ? `Inbox, ${data.inboxCount} pending` : 'Inbox'}
 					>
 						Inbox
 						{#if data.inboxCount}
 							<span
-								class="absolute -top-1 -right-2 min-w-5 rounded-full bg-accent px-1.5 text-center text-[11px] leading-5 font-bold text-white"
+								class="absolute -top-2 -right-4 min-w-5 rounded-full bg-button px-1.5 text-center text-[11px] leading-5 font-bold text-white"
 							>
 								{data.inboxCount}
 							</span>
 						{/if}
 					</a>
-					<div class="relative">
+					<div class="relative ml-2">
 						<button
 							type="button"
-							class="flex items-center rounded-full"
+							class="flex items-center gap-1.5 rounded-md p-0.5 hover:bg-surface-2"
 							aria-haspopup="menu"
 							aria-expanded={menuOpen}
 							aria-label="Account menu"
@@ -81,13 +87,26 @@
 								menuOpen = !menuOpen;
 							}}
 						>
-							<Avatar user={data.user} size={32} />
+							<Avatar user={data.user} size={30} />
+							<span class="hidden max-w-28 truncate text-sm font-bold sm:block"
+								>{data.user.displayName || data.user.username}</span
+							>
+							<svg
+								viewBox="0 0 24 24"
+								width="14"
+								height="14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								class="text-muted"
+								aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg
+							>
 						</button>
 						{#if menuOpen}
 							<div
 								role="menu"
 								tabindex="-1"
-								class="absolute right-0 mt-2 w-48 overflow-hidden card py-1 text-sm shadow-xl"
+								class="absolute right-0 mt-1 w-48 overflow-hidden card py-1 text-sm shadow-lg"
 								onclick={(e) => e.stopPropagation()}
 								onkeydown={(e) => e.key === 'Escape' && (menuOpen = false)}
 							>
@@ -103,7 +122,7 @@
 									href="/settings"
 									onclick={() => (menuOpen = false)}>Edit profile</a
 								>
-								<form method="POST" action="/logout">
+								<form method="POST" action="/logout" class="border-t border-border">
 									<button
 										role="menuitem"
 										class="w-full px-4 py-2 text-left text-muted hover:bg-surface-2 hover:text-text"
@@ -121,11 +140,11 @@
 		</nav>
 	</header>
 
-	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-10">
+	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
 		{@render children()}
 	</main>
 
-	<footer class="border-t border-border py-6 text-center text-xs text-muted">
+	<footer class="bg-surface-2 py-6 text-center text-xs text-muted">
 		{APP_NAME} is a fan-made tool and is not affiliated with itch.io.
 	</footer>
 </div>

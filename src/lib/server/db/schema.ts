@@ -30,7 +30,6 @@ export const users = sqliteTable('users', {
 	timezone: text('timezone').notNull().default('UTC'),
 	experience: text('experience').$type<Experience>().notNull().default('some'),
 	contactDiscord: text('contact_discord'),
-	contactEmail: text('contact_email'),
 	links: text('links', { mode: 'json' }).$type<string[]>().notNull().default([]),
 	onboarded: integer('onboarded', { mode: 'boolean' }).notNull().default(false),
 	createdAt: timestamp('created_at').notNull().default(now),

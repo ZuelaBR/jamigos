@@ -37,8 +37,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			experience: profile.experience,
 			timezone: profile.timezone,
 			links: profile.links,
-			contactDiscord: showContact ? profile.contactDiscord : null,
-			contactEmail: showContact ? profile.contactEmail : null
+			contactDiscord: showContact ? profile.contactDiscord : null
 		},
 		showContact,
 		isMe: locals.user?.id === profile.id,

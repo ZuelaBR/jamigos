@@ -28,7 +28,6 @@ describe('parseProfileForm', () => {
 		expect(r.data?.roles).toEqual(['code']);
 		expect(r.data?.tools).toEqual(['godot']);
 		expect(r.data?.contactDiscord).toBe('ale_dev');
-		expect(r.data?.contactEmail).toBeNull();
 	});
 
 	it('requires a role and a valid timezone', () => {

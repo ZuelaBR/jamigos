@@ -22,7 +22,6 @@
 		timezone: string;
 		bio: string;
 		contactDiscord: string | null;
-		contactEmail: string | null;
 		links: string[];
 	};
 
@@ -78,7 +77,6 @@
 		timezone: 1,
 		bio: 2,
 		contactDiscord: 2,
-		contactEmail: 2,
 		links: 2
 	};
 	$effect(() => {
@@ -126,13 +124,7 @@
 			<p class="hint mb-3">Pick everything you're comfortable doing. Your main skill first.</p>
 			<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 				{#each ROLES as role (role)}
-					<label
-						class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors has-[:checked]:border-accent has-[:checked]:bg-accent/10 {roles.includes(
-							role
-						)
-							? ''
-							: 'border-border hover:bg-surface-2'}"
-					>
+					<label class="choice w-full">
 						<input type="checkbox" name="roles" value={role} bind:group={roles} class="sr-only" />
 						<span aria-hidden="true">{ROLE_ICONS[role]}</span>
 						{ROLE_LABELS[role]}
@@ -146,9 +138,7 @@
 			<legend class="label">Game jam experience</legend>
 			<div class="mt-2 flex flex-wrap gap-2">
 				{#each EXPERIENCES as exp (exp)}
-					<label
-						class="cursor-pointer rounded-full border border-border px-4 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent/10"
-					>
+					<label class="choice">
 						<input
 							type="radio"
 							name="experience"
@@ -201,7 +191,7 @@
 			{#if errors.bio}<p class="field-error">{errors.bio}</p>{/if}
 		</div>
 
-		<div class="grid gap-4 sm:grid-cols-2">
+		<div class="sm:max-w-sm">
 			<div>
 				<label class="label" for="contactDiscord">Discord username</label>
 				<input
@@ -213,20 +203,6 @@
 					value={values.contactDiscord ?? ''}
 				/>
 				{#if errors.contactDiscord}<p class="field-error">{errors.contactDiscord}</p>{/if}
-			</div>
-			<div>
-				<label class="label" for="contactEmail"
-					>Email <span class="font-normal text-muted">(optional)</span></label
-				>
-				<input
-					id="contactEmail"
-					name="contactEmail"
-					type="email"
-					class="w-full"
-					placeholder="you@example.com"
-					value={values.contactEmail ?? ''}
-				/>
-				{#if errors.contactEmail}<p class="field-error">{errors.contactEmail}</p>{/if}
 			</div>
 		</div>
 		<p class="hint -mt-4">

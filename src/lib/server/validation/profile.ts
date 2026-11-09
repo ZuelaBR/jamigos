@@ -23,7 +23,6 @@ export const profileSchema = z.object({
 			.max(40)
 			.regex(/^[a-zA-Z0-9_.]{2,32}$/, 'That does not look like a Discord username.')
 	),
-	contactEmail: optional(z.string().email('Enter a valid email address.').max(120)),
 	links: z
 		.array(
 			z
@@ -48,7 +47,6 @@ export function parseProfileForm(fd: FormData) {
 		timezone: str(fd, 'timezone'),
 		bio: str(fd, 'bio'),
 		contactDiscord: str(fd, 'contactDiscord').replace(/^@/, ''),
-		contactEmail: str(fd, 'contactEmail'),
 		links: strs(fd, 'links')
 	});
 }

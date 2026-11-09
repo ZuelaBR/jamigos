@@ -35,8 +35,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				roles: users.roles,
 				timezone: users.timezone,
 				itchUrl: users.itchUrl,
-				contactDiscord: users.contactDiscord,
-				contactEmail: users.contactEmail
+				contactDiscord: users.contactDiscord
 			})
 			.from(teamMembers)
 			.innerJoin(users, eq(users.id, teamMembers.userId))
@@ -75,8 +74,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		jam: { slug: jam.slug, title: jam.title, endsAt: jam.endsAt },
 		members: members.map((m) => ({
 			...m,
-			contactDiscord: showContact ? m.contactDiscord : null,
-			contactEmail: showContact ? m.contactEmail : null
+			contactDiscord: showContact ? m.contactDiscord : null
 		})),
 		isOwner,
 		isMember,
