@@ -91,4 +91,6 @@ Key rules: each user can be on **one team per jam** (enforced by a unique index)
 
 Two solo jammers can also **team up** without either of them starting a team first. One sends a team-up request; when the other accepts, a team named after both of them (for example "Mika & Devon") is created with both as members, and the sender is the owner who can rename it. Joining any team cancels your other pending invites, join requests and team-ups for that jam.
 
+When someone accepts something you sent (a team-up, a join request or an invite), you get an update in your **Inbox**. Unread updates count towards the Inbox badge, and opening the Inbox marks them as read.
+
 Jamigos is a fan project and is not affiliated with itch.io.

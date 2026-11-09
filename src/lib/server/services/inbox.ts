@@ -1,11 +1,15 @@
-import { and, desc, eq, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/index.ts';
 import { alias } from 'drizzle-orm/sqlite-core';
-import { jams, teamRequests, teamUps, teams, users } from '#lib/server/db/schema.ts';
+import { jams, notifications, teamRequests, teamUps, teams, users } from '#lib/server/db/schema.ts';
 
-// Items waiting for *this* user's decision: invites and team-ups addressed to them,
-// and join requests sent to teams they own.
-export async function pendingActionCount(db: Db, userId: string): Promise<number> {
+// Items waiting for *this* user's decision (invites and team-ups addressed to them, join
+// requests sent to teams they own) plus unread updates, unless `includeUpdates` is false.
+export async function pendingActionCount(
+	db: Db,
+	userId: string,
+	{ includeUpdates = true } = {}
+): Promise<number> {
 	const [invites] = await db
 		.select({ n: sql<number>`count(*)` })
 		.from(teamRequests)
@@ -31,7 +35,8 @@ export async function pendingActionCount(db: Db, userId: string): Promise<number
 		.select({ n: sql<number>`count(*)` })
 		.from(teamUps)
 		.where(and(eq(teamUps.toUserId, userId), eq(teamUps.status, 'pending')));
-	return (invites?.n ?? 0) + (requests?.n ?? 0) + (ups?.n ?? 0);
+	const unread = includeUpdates ? await unreadUpdateCount(db, userId) : 0;
+	return (invites?.n ?? 0) + (requests?.n ?? 0) + (ups?.n ?? 0) + unread;
 }
 
 export async function inboxItems(db: Db, userId: string) {
@@ -121,4 +126,57 @@ async function teamUpItems(db: Db, userId: string) {
 		incoming: r.to.id === userId,
 		other: r.to.id === userId ? r.from : r.to
 	}));
+}
+
+// ---------------------------------------------------------------------------
+// Updates ("Lucia accepted your team-up")
+// ---------------------------------------------------------------------------
+
+const UPDATES_MAX_AGE_MS = 30 * 86_400_000;
+
+export async function unreadUpdateCount(db: Db, userId: string) {
+	const [row] = await db
+		.select({ n: sql<number>`count(*)` })
+		.from(notifications)
+		.where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+	return row?.n ?? 0;
+}
+
+/** The last 30 days of updates, newest first. */
+export async function recentUpdates(db: Db, userId: string, limit = 20) {
+	return db
+		.select({
+			id: notifications.id,
+			kind: notifications.kind,
+			teamId: notifications.teamId,
+			// The team's current name (it may have been renamed); the stored one if it's gone.
+			teamName: sql<string>`coalesce("teams"."name", "notifications"."team_name")`,
+			readAt: notifications.readAt,
+			createdAt: notifications.createdAt,
+			jam: { slug: jams.slug, title: jams.title },
+			actor: {
+				username: users.username,
+				displayName: users.displayName,
+				avatarUrl: users.avatarUrl
+			}
+		})
+		.from(notifications)
+		.innerJoin(users, eq(users.id, notifications.actorId))
+		.innerJoin(jams, eq(jams.id, notifications.jamId))
+		.leftJoin(teams, eq(teams.id, notifications.teamId))
+		.where(
+			and(
+				eq(notifications.userId, userId),
+				gt(notifications.createdAt, new Date(Date.now() - UPDATES_MAX_AGE_MS))
+			)
+		)
+		.orderBy(desc(notifications.createdAt))
+		.limit(limit);
+}
+
+export async function markUpdatesRead(db: Db, userId: string) {
+	await db
+		.update(notifications)
+		.set({ readAt: new Date() })
+		.where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
 }

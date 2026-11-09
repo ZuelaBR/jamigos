@@ -53,6 +53,17 @@ test('two solo jammers team up and become a team', async ({ browser }, testInfo)
 	await mika.getByRole('button', { name: 'Save' }).click();
 	await expect(mika.getByRole('heading', { level: 1, name: 'Cozy Crew' })).toBeVisible();
 	await expect(mika.getByRole('button', { name: `Discord: lucia${run}_dc` })).toBeVisible();
+
+	// Mika is told in the inbox that Lucia accepted; opening the inbox marks it read.
+	await expect(mika.getByRole('link', { name: /Inbox, 1 pending/ })).toBeVisible();
+	await go(mika, '/inbox');
+	const update = mika.getByRole('listitem').filter({ hasText: 'accepted your team-up' });
+	await expect(update).toContainText(Lucia);
+	await expect(update).toContainText('Cozy Crew'); // the team's current name at the time
+	await expect(update.getByText('New')).toBeVisible();
+	await expect(mika.getByRole('link', { name: 'Inbox', exact: true })).toBeVisible(); // no badge here
+	await go(mika, '/inbox');
+	await expect(update.getByText('New')).toHaveCount(0);
 });
 
 test('signed-out visitors are asked to sign in before seeing contact details', async ({

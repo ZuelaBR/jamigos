@@ -4,6 +4,7 @@
 	import InboxIcon from '@lucide/svelte/icons/inbox';
 	import Handshake from '@lucide/svelte/icons/handshake';
 	import Mail from '@lucide/svelte/icons/mail';
+	import PartyPopper from '@lucide/svelte/icons/party-popper';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import RoleChip from '#lib/components/RoleChip.svelte';
 	import { withToasts } from '#lib/forms.ts';
@@ -17,6 +18,46 @@
 
 <div class="mx-auto max-w-3xl">
 	<h1 class="text-2xl font-bold">Inbox</h1>
+
+	{#if data.updates.length}
+		<h2 class="mt-8 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">Updates</h2>
+		<ul class="divide-y divide-border card">
+			{#each data.updates as u (u.id)}
+				{@const who = u.actor.displayName || u.actor.username}
+				<li class="flex items-center gap-3 px-4 py-3 {u.isNew ? 'bg-ok/5' : ''}">
+					<span class="relative shrink-0">
+						<a href="/u/{u.actor.username}"><Avatar user={u.actor} size={36} /></a>
+						<span
+							class="absolute -right-1 -bottom-1 flex h-5 w-5 items-center justify-center rounded-full bg-surface text-ok"
+							aria-hidden="true"><PartyPopper size={13} /></span
+						>
+					</span>
+					<div class="min-w-0 flex-1 text-sm">
+						<p>
+							<a href="/u/{u.actor.username}" class="font-semibold hover:text-accent">{who}</a>
+							{#if u.kind === 'teamup_accepted'}
+								accepted your team-up. You're now on <strong>{u.teamName}</strong>!
+							{:else if u.kind === 'request_accepted'}
+								accepted your request to join <strong>{u.teamName}</strong>!
+							{:else}
+								accepted your invite and joined <strong>{u.teamName}</strong>.
+							{/if}
+							{#if u.isNew}<span
+									class="ml-1 rounded bg-ok/15 px-1.5 py-0.5 align-[1px] text-[10px] font-bold text-ok uppercase"
+									>New</span
+								>{/if}
+						</p>
+						<p class="text-xs text-muted">{u.jam.title} · {relativeTime(u.createdAt)}</p>
+					</div>
+					{#if u.teamId}
+						<a href="/teams/{u.teamId}" class="btn-ghost btn-sm shrink-0">View team</a>
+					{:else}
+						<span class="shrink-0 text-xs text-muted">Team disbanded</span>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+	{/if}
 
 	<h2 class="mt-8 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">
 		Waiting for you

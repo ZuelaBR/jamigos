@@ -1,6 +1,6 @@
 import { attempt } from '#lib/server/actions.ts';
 import { requireUser, requireUserForAction } from '#lib/server/guards.ts';
-import { inboxItems } from '#lib/server/services/inbox.ts';
+import { inboxItems, markUpdatesRead, recentUpdates } from '#lib/server/services/inbox.ts';
 import { redirect } from '@sveltejs/kit';
 import {
 	cancelRequest,
@@ -13,7 +13,11 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const user = requireUser(event);
-	return inboxItems(event.locals.db, user.id);
+	const db = event.locals.db;
+	const [items, updates] = await Promise.all([inboxItems(db, user.id), recentUpdates(db, user.id)]);
+	// Opening the inbox reads the updates; the "New" tag uses the state from before this visit.
+	if (updates.some((u) => !u.readAt)) await markUpdatesRead(db, user.id);
+	return { ...items, updates: updates.map(({ readAt, ...u }) => ({ ...u, isNew: !readAt })) };
 };
 
 export const actions: Actions = {

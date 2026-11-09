@@ -22,6 +22,13 @@
       "when": 1794254727602,
       "tag": "0002_team_ups",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794256795030,
+      "tag": "0003_notifications",
+      "breakpoints": true
     }
   ]
 }

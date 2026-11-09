@@ -180,9 +180,37 @@ export const teamUps = sqliteTable(
 	]
 );
 
+export type NotificationKind = 'teamup_accepted' | 'request_accepted' | 'invite_accepted';
+
+/** Updates shown in the recipient's inbox, e.g. "Lucia accepted your team-up". */
+export const notifications = sqliteTable(
+	'notifications',
+	{
+		id: id(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		kind: text('kind').$type<NotificationKind>().notNull(),
+		// Who did it (e.g. the person who accepted).
+		actorId: text('actor_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		jamId: text('jam_id')
+			.notNull()
+			.references(() => jams.id, { onDelete: 'cascade' }),
+		// Kept even if the team is later disbanded, so the update still makes sense.
+		teamId: text('team_id').references(() => teams.id, { onDelete: 'set null' }),
+		teamName: text('team_name').notNull(),
+		readAt: timestamp('read_at'),
+		createdAt: timestamp('created_at').notNull().default(now)
+	},
+	(t) => [index('notifications_user_idx').on(t.userId, t.createdAt)]
+);
+
 export type User = typeof users.$inferSelect;
 export type Jam = typeof jams.$inferSelect;
 export type Team = typeof teams.$inferSelect;
 export type LfgPost = typeof lfgPosts.$inferSelect;
 export type TeamRequest = typeof teamRequests.$inferSelect;
 export type TeamUp = typeof teamUps.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;

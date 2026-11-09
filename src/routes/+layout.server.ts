@@ -18,7 +18,10 @@ export const load: LayoutServerLoad = async ({ locals, url, cookies }) => {
 			avatarUrl: user.avatarUrl,
 			timezone: user.timezone
 		},
-		inboxCount: user ? await pendingActionCount(locals.db, user.id) : 0,
+		// On the inbox itself, updates are being read right now, so don't count them.
+		inboxCount: user
+			? await pendingActionCount(locals.db, user.id, { includeUpdates: url.pathname !== '/inbox' })
+			: 0,
 		theme: parseTheme(cookies.get(THEME_COOKIE))
 	};
 };

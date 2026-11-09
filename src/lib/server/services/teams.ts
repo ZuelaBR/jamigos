@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/index.ts';
 import {
 	lfgPosts,
+	notifications,
 	teamMembers,
 	teamRequests,
 	teamUps,
@@ -464,7 +465,16 @@ export async function respondToRequest(
 			// joinStatements cancels all of the user's pending requests for the jam, so mark
 			// this one accepted afterwards.
 			...joinStatements(db, team, req.userId),
-			db.update(teamRequests).set({ status: 'accepted' }).where(eq(teamRequests.id, requestId))
+			db.update(teamRequests).set({ status: 'accepted' }).where(eq(teamRequests.id, requestId)),
+			// Tell whoever sent it: the requester (owner accepted) or the owner (invitee accepted).
+			db.insert(notifications).values({
+				userId: req.kind === 'request' ? req.userId : team.ownerId,
+				kind: req.kind === 'request' ? 'request_accepted' : 'invite_accepted',
+				actorId,
+				jamId: team.jamId,
+				teamId: team.id,
+				teamName: team.name
+			})
 		]);
 	} catch (err) {
 		if (isUniqueViolation(err)) throw new ServiceError('Already on a team for this jam.');
@@ -600,7 +610,15 @@ export async function respondToTeamUp(
 			db
 				.update(teamUps)
 				.set({ status: 'accepted', teamId: team.id })
-				.where(eq(teamUps.id, teamUpId))
+				.where(eq(teamUps.id, teamUpId)),
+			db.insert(notifications).values({
+				userId: req.fromUserId,
+				kind: 'teamup_accepted',
+				actorId: req.toUserId,
+				jamId: team.jamId,
+				teamId: team.id,
+				teamName: team.name
+			})
 		]);
 	} catch (err) {
 		if (isUniqueViolation(err))
