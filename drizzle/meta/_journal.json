@@ -15,6 +15,13 @@
       "when": 1794239223907,
       "tag": "0001_drop_contact_email",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794254727602,
+      "tag": "0002_team_ups",
+      "breakpoints": true
     }
   ]
 }

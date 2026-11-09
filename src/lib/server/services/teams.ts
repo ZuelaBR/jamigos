@@ -1,9 +1,10 @@
-import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/index.ts';
 import {
 	lfgPosts,
 	teamMembers,
 	teamRequests,
+	teamUps,
 	teams,
 	users,
 	type Jam,
@@ -64,7 +65,8 @@ export async function getBoard(db: Db, jamId: string, viewerId: string | null) {
 				message: lfgPosts.message,
 				roles: lfgPosts.roles,
 				updatedAt: lfgPosts.updatedAt,
-				user: publicUser
+				// Contact fields are stripped for signed-out visitors by the page load.
+				user: { ...publicUser, contactDiscord: users.contactDiscord, itchUrl: users.itchUrl }
 			})
 			.from(lfgPosts)
 			.innerJoin(users, eq(users.id, lfgPosts.authorId))
@@ -87,6 +89,14 @@ export async function getBoard(db: Db, jamId: string, viewerId: string | null) {
 		/** Invites the viewer's team has sent, by user. */
 		invited: { userId: string; requestId: string }[];
 		invitesToMe: { requestId: string; teamId: string }[];
+		/** Team-ups the viewer has sent, by recipient. */
+		teamUpsSent: { userId: string; teamUpId: string }[];
+		/** Team-ups waiting for the viewer's answer. */
+		teamUpsReceived: {
+			teamUpId: string;
+			message: string;
+			from: { id: string; username: string; displayName: string | null };
+		}[];
 	} | null = null;
 
 	if (viewerId) {
@@ -102,6 +112,24 @@ export async function getBoard(db: Db, jamId: string, viewerId: string | null) {
 			.from(teamRequests)
 			.innerJoin(teams, eq(teams.id, teamRequests.teamId))
 			.where(and(eq(teams.jamId, jamId), eq(teamRequests.status, 'pending')));
+		const teamUpRows = await db
+			.select({
+				id: teamUps.id,
+				fromUserId: teamUps.fromUserId,
+				toUserId: teamUps.toUserId,
+				message: teamUps.message,
+				fromUsername: users.username,
+				fromDisplayName: users.displayName
+			})
+			.from(teamUps)
+			.innerJoin(users, eq(users.id, teamUps.fromUserId))
+			.where(
+				and(
+					eq(teamUps.jamId, jamId),
+					eq(teamUps.status, 'pending'),
+					or(eq(teamUps.fromUserId, viewerId), eq(teamUps.toUserId, viewerId))
+				)
+			);
 		viewer = {
 			myTeamId,
 			isOwner: myTeam?.ownerId === viewerId,
@@ -117,7 +145,17 @@ export async function getBoard(db: Db, jamId: string, viewerId: string | null) {
 					: [],
 			invitesToMe: pending
 				.filter((r) => r.kind === 'invite' && r.userId === viewerId)
-				.map((r) => ({ requestId: r.id, teamId: r.teamId }))
+				.map((r) => ({ requestId: r.id, teamId: r.teamId })),
+			teamUpsSent: teamUpRows
+				.filter((t) => t.fromUserId === viewerId)
+				.map((t) => ({ userId: t.toUserId, teamUpId: t.id })),
+			teamUpsReceived: teamUpRows
+				.filter((t) => t.toUserId === viewerId)
+				.map((t) => ({
+					teamUpId: t.id,
+					message: t.message,
+					from: { id: t.fromUserId, username: t.fromUsername, displayName: t.fromDisplayName }
+				}))
 		};
 	}
 
@@ -182,6 +220,17 @@ function joinStatements(db: Db, team: Team, userId: string) {
 						teamRequests.teamId,
 						db.select({ id: teams.id }).from(teams).where(eq(teams.jamId, team.jamId))
 					)
+				)
+			),
+		// ...and any pending "team up" requests they sent or received for this jam.
+		db
+			.update(teamUps)
+			.set({ status: 'cancelled' })
+			.where(
+				and(
+					eq(teamUps.jamId, team.jamId),
+					eq(teamUps.status, 'pending'),
+					or(eq(teamUps.fromUserId, userId), eq(teamUps.toUserId, userId))
 				)
 			)
 	] as const;
@@ -436,4 +485,136 @@ export async function cancelRequest(db: Db, requestId: string, actorId: string) 
 		.update(teamRequests)
 		.set({ status: 'cancelled' })
 		.where(and(eq(teamRequests.id, requestId), ne(teamRequests.status, 'accepted')));
+}
+
+// ---------------------------------------------------------------------------
+// Team-ups: two solo jammers forming a team together
+// ---------------------------------------------------------------------------
+
+type NamedUser = { username: string; displayName: string | null };
+
+/** "Mika & Devon", kept within the 60-character team name limit. Owners can rename it later. */
+export function defaultTeamName(a: NamedUser, b: NamedUser) {
+	const name = (u: NamedUser) => (u.displayName || u.username).slice(0, 28);
+	return `${name(a)} & ${name(b)}`;
+}
+
+/**
+ * Ask another solo jammer to team up. If they had already asked you, that counts as a yes and
+ * the team is formed straight away (`formed` is returned).
+ */
+export async function sendTeamUp(
+	db: Db,
+	jam: Jam,
+	fromId: string,
+	toId: string,
+	message: string
+): Promise<{ formed: Team | null }> {
+	if (fromId === toId) throw new ServiceError("You can't team up with yourself.");
+	if (await membershipForJam(db, jam.id, fromId))
+		throw new ServiceError("You're already on a team for this jam. Invite them to it instead.");
+	if (await membershipForJam(db, jam.id, toId))
+		throw new ServiceError('They already joined a team for this jam.');
+
+	const pending = await db
+		.select()
+		.from(teamUps)
+		.where(
+			and(
+				eq(teamUps.jamId, jam.id),
+				eq(teamUps.status, 'pending'),
+				or(
+					and(eq(teamUps.fromUserId, fromId), eq(teamUps.toUserId, toId)),
+					and(eq(teamUps.fromUserId, toId), eq(teamUps.toUserId, fromId))
+				)
+			)
+		);
+	if (pending.some((p) => p.fromUserId === fromId))
+		throw new ServiceError('You already asked them to team up.');
+	const theyAskedFirst = pending.find((p) => p.fromUserId === toId);
+	if (theyAskedFirst)
+		return { formed: (await respondToTeamUp(db, theyAskedFirst.id, fromId, true)).team };
+
+	const [outgoing] = await db
+		.select({ n: sql<number>`count(*)` })
+		.from(teamUps)
+		.where(and(eq(teamUps.fromUserId, fromId), eq(teamUps.status, 'pending')));
+	if ((outgoing?.n ?? 0) >= MAX_PENDING_OUTGOING)
+		throw new ServiceError('You have too many pending requests. Wait for some replies first.');
+
+	await db.insert(teamUps).values({ jamId: jam.id, fromUserId: fromId, toUserId: toId, message });
+	return { formed: null };
+}
+
+/** The recipient accepts (creating a team for both; the sender owns it) or declines. */
+export async function respondToTeamUp(
+	db: Db,
+	teamUpId: string,
+	actorId: string,
+	accept: boolean
+): Promise<{ team: Team | null }> {
+	const req = await db.query.teamUps.findFirst({ where: eq(teamUps.id, teamUpId) });
+	if (!req || req.status !== 'pending')
+		throw new ServiceError('This request is no longer pending.');
+	if (req.toUserId !== actorId) throw new ServiceError("You can't answer this request.");
+
+	if (!accept) {
+		await db.update(teamUps).set({ status: 'declined' }).where(eq(teamUps.id, teamUpId));
+		return { team: null };
+	}
+
+	const [fromTeam, toTeam] = await Promise.all([
+		membershipForJam(db, req.jamId, req.fromUserId),
+		membershipForJam(db, req.jamId, req.toUserId)
+	]);
+	if (fromTeam || toTeam) {
+		await db.update(teamUps).set({ status: 'cancelled' }).where(eq(teamUps.id, teamUpId));
+		throw new ServiceError(
+			toTeam ? "You're already on a team for this jam." : 'They already joined another team.'
+		);
+	}
+
+	const people = await db
+		.select({ id: users.id, username: users.username, displayName: users.displayName })
+		.from(users)
+		.where(inArray(users.id, [req.fromUserId, req.toUserId]));
+	const from = people.find((p) => p.id === req.fromUserId)!;
+	const to = people.find((p) => p.id === req.toUserId)!;
+
+	const team: Team = {
+		id: crypto.randomUUID(),
+		jamId: req.jamId,
+		ownerId: req.fromUserId,
+		name: defaultTeamName(from, to),
+		description: '',
+		openRoles: [],
+		status: 'open',
+		createdAt: new Date()
+	};
+	try {
+		await db.batch([
+			db.insert(teams).values(team),
+			...joinStatements(db, team, req.fromUserId),
+			...joinStatements(db, team, req.toUserId),
+			// joinStatements cancels every pending team-up for both people, so mark this one last.
+			db
+				.update(teamUps)
+				.set({ status: 'accepted', teamId: team.id })
+				.where(eq(teamUps.id, teamUpId))
+		]);
+	} catch (err) {
+		if (isUniqueViolation(err))
+			throw new ServiceError('One of you already joined a team for this jam.');
+		throw err;
+	}
+	return { team };
+}
+
+/** The sender withdraws a pending team-up. */
+export async function cancelTeamUp(db: Db, teamUpId: string, actorId: string) {
+	const req = await db.query.teamUps.findFirst({ where: eq(teamUps.id, teamUpId) });
+	if (!req || req.status !== 'pending')
+		throw new ServiceError('This request is no longer pending.');
+	if (req.fromUserId !== actorId) throw new ServiceError("You can't cancel this.");
+	await db.update(teamUps).set({ status: 'cancelled' }).where(eq(teamUps.id, teamUpId));
 }

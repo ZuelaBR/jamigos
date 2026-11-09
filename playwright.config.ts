@@ -13,8 +13,22 @@ export default defineConfig({
 	use: { baseURL: `http://localhost:${PORT}`, trace: 'retain-on-failure' },
 	projects: [
 		// Each project uses a different real jam so the parallel runs don't see each other's posts.
-		{ name: 'desktop', use: { ...devices['Desktop Chrome'] }, metadata: { jam: 'gmtk-2027' } },
-		{ name: 'mobile', use: { ...devices['Pixel 7'] }, metadata: { jam: 'brackeys-17' } }
+		{
+			name: 'desktop',
+			use: { ...devices['Desktop Chrome'] },
+			metadata: {
+				jam: 'gmtk-2027',
+				teamUpJam: 'metroidvania-month-34'
+			}
+		},
+		{
+			name: 'mobile',
+			use: { ...devices['Pixel 7'] },
+			metadata: {
+				jam: 'brackeys-17',
+				teamUpJam: 'the-mfg-gamblers-jam'
+			}
+		}
 	],
 	webServer: {
 		command: [

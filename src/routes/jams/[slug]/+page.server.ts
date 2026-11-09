@@ -4,12 +4,15 @@ import { requireUserForAction } from '#lib/server/guards.ts';
 import { getJamBySlug } from '#lib/server/services/jams.ts';
 import {
 	cancelRequest,
+	cancelTeamUp,
 	closeLfgPost,
 	createTeam,
 	getBoard,
 	inviteUser,
 	requestToJoin,
 	respondToRequest,
+	respondToTeamUp,
+	sendTeamUp,
 	upsertLfgPost
 } from '#lib/server/services/teams.ts';
 import { fieldErrors, str } from '#lib/server/validation/form.ts';
@@ -26,6 +29,10 @@ export const load: PageServerLoad = async (event) => {
 	const jam = await loadJam(event);
 	const viewer = event.locals.user;
 	const board = await getBoard(event.locals.db, jam.id, viewer?.id ?? null);
+	// Contact details are only for signed-in itch.io users (same rule as profiles).
+	if (!viewer) {
+		for (const post of board.posts) post.user.contactDiscord = null;
+	}
 	return {
 		jam,
 		board,
@@ -89,6 +96,41 @@ export const actions: Actions = {
 		return attempt(async () => {
 			await inviteUser(event.locals.db, str(fd, 'teamId'), user.id, str(fd, 'userId'), msg.value);
 			return { toast: 'Invite sent!' };
+		});
+	},
+
+	teamUp: async (event) => {
+		const user = requireUserForAction(event);
+		const jam = await loadJam(event);
+		const fd = await event.request.formData();
+		const msg = message(fd);
+		if (!msg.ok) return fail(400, { message: msg.error });
+		const result = await attempt(() =>
+			sendTeamUp(event.locals.db, jam, user.id, str(fd, 'userId'), msg.value)
+		);
+		if (!('formed' in result)) return result;
+		// They had already asked you: the team exists now.
+		if (result.formed) redirect(303, `/teams/${result.formed.id}?teamup=1`);
+		return { toast: "Request sent! If they say yes, you'll be a team." };
+	},
+
+	respondTeamUp: async (event) => {
+		const user = requireUserForAction(event);
+		const fd = await event.request.formData();
+		const accept = str(fd, 'accept') === '1';
+		return attempt(async () => {
+			const { team } = await respondToTeamUp(event.locals.db, str(fd, 'teamUpId'), user.id, accept);
+			if (team) redirect(303, `/teams/${team.id}?teamup=1`);
+			return { toast: 'Declined.' };
+		});
+	},
+
+	cancelTeamUp: async (event) => {
+		const user = requireUserForAction(event);
+		const fd = await event.request.formData();
+		return attempt(async () => {
+			await cancelTeamUp(event.locals.db, str(fd, 'teamUpId'), user.id);
+			return { toast: 'Cancelled.' };
 		});
 	},
 

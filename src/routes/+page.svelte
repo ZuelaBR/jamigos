@@ -48,8 +48,8 @@
 			title: 'Looking for a team?',
 			points: [
 				'Post once per jam and let teams find you',
-				'Filter teams by the roles they still need',
-				'Ask to join with a short hello'
+				'Ask to join a team that needs your skills',
+				'Or team up with another solo jammer and start your own'
 			]
 		},
 		{
@@ -228,8 +228,8 @@
 					<h3 class="text-lg font-bold">Team up and jam</h3>
 				</div>
 				<p class="mt-2 text-muted">
-					Invite people or ask to join a team. Once you're in, you'll see how to reach each other on
-					Discord.
+					Team up with another solo jammer, ask to join a team, or invite people. Once you're a
+					team, you'll see how to reach each other on Discord.
 				</p>
 				<div class="mt-5" inert aria-hidden="true">
 					<TeamCard team={exampleTeam}>

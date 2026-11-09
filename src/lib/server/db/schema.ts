@@ -148,8 +148,41 @@ export const teamRequests = sqliteTable(
 	(t) => [index('requests_team_idx').on(t.teamId), index('requests_user_idx').on(t.userId)]
 );
 
+export type TeamUpStatus = 'pending' | 'accepted' | 'declined' | 'cancelled';
+
+/**
+ * "Let's team up": a request between two solo jammers, before any team exists. When the
+ * recipient accepts, a team is created with both of them (the sender owns it).
+ */
+export const teamUps = sqliteTable(
+	'team_ups',
+	{
+		id: id(),
+		jamId: text('jam_id')
+			.notNull()
+			.references(() => jams.id, { onDelete: 'cascade' }),
+		fromUserId: text('from_user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		toUserId: text('to_user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		message: text('message').notNull().default(''),
+		status: text('status').$type<TeamUpStatus>().notNull().default('pending'),
+		// The team created on accept.
+		teamId: text('team_id').references(() => teams.id, { onDelete: 'set null' }),
+		createdAt: timestamp('created_at').notNull().default(now)
+	},
+	(t) => [
+		index('team_ups_to_idx').on(t.toUserId),
+		index('team_ups_from_idx').on(t.fromUserId),
+		index('team_ups_jam_idx').on(t.jamId)
+	]
+);
+
 export type User = typeof users.$inferSelect;
 export type Jam = typeof jams.$inferSelect;
 export type Team = typeof teams.$inferSelect;
 export type LfgPost = typeof lfgPosts.$inferSelect;
 export type TeamRequest = typeof teamRequests.$inferSelect;
+export type TeamUp = typeof teamUps.$inferSelect;

@@ -89,4 +89,6 @@ scripts/sync-jams.ts             crawler used by the GitHub Action
 
 Key rules: each user can be on **one team per jam** (enforced by a unique index). When someone joins a team, their LFG post closes and their other pending requests for that jam are cancelled. Contact details are visible only to signed-in users.
 
+Two solo jammers can also **team up** without either of them starting a team first. One sends a team-up request; when the other accepts, a team named after both of them (for example "Mika & Devon") is created with both as members, and the sender is the owner who can rename it. Joining any team cancels your other pending invites, join requests and team-ups for that jam.
+
 Jamigos is a fan project and is not affiliated with itch.io.

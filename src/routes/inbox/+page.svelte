@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import Handshake from '@lucide/svelte/icons/handshake';
 	import Mail from '@lucide/svelte/icons/mail';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import RoleChip from '#lib/components/RoleChip.svelte';
@@ -20,8 +21,43 @@
 	<h2 class="mt-8 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">
 		Waiting for you
 	</h2>
-	{#if data.incoming.length}
+	{#if data.incoming.length || data.teamUpsIn.length}
 		<ul class="space-y-3">
+			{#each data.teamUpsIn as t (t.id)}
+				<li class="flex flex-col gap-3 card p-4 sm:flex-row sm:items-center">
+					<div class="flex min-w-0 flex-1 items-start gap-3">
+						<a href="/u/{t.other.username}"><Avatar user={t.other} size={40} /></a>
+						<div class="min-w-0">
+							<p class="text-sm">
+								<Handshake
+									size={15}
+									class="mr-1 inline-block align-[-2px] text-accent"
+									aria-hidden="true"
+								/><a href="/u/{t.other.username}" class="font-semibold hover:text-accent"
+									>{t.other.displayName || t.other.username}</a
+								> wants to team up with you
+							</p>
+							<p class="text-xs text-muted">{t.jam.title} · {relativeTime(t.createdAt)}</p>
+							<div class="mt-1.5 flex flex-wrap gap-1">
+								{#each t.other.roles as role (role)}<RoleChip {role} />{/each}
+							</div>
+						</div>
+					</div>
+					{#if t.message}<p class="rounded-lg bg-surface-2 p-2 text-sm sm:max-w-56">
+							"{t.message}"
+						</p>{/if}
+					<form
+						method="POST"
+						action="?/respondTeamUp"
+						class="flex gap-2"
+						use:enhance={withToasts()}
+					>
+						<input type="hidden" name="teamUpId" value={t.id} />
+						<button class="btn-primary btn-sm" name="accept" value="1">Team up</button>
+						<button class="btn-ghost btn-sm" name="accept" value="0">Decline</button>
+					</form>
+				</li>
+			{/each}
 			{#each data.incoming as item (item.id)}
 				<li class="flex flex-col gap-3 card p-4 sm:flex-row sm:items-center">
 					<div class="flex min-w-0 flex-1 items-start gap-3">
@@ -78,9 +114,24 @@
 		</EmptyState>
 	{/if}
 
-	{#if data.outgoing.length}
+	{#if data.outgoing.length || data.teamUpsOut.length}
 		<h2 class="mt-10 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">Sent by you</h2>
 		<ul class="divide-y divide-border card">
+			{#each data.teamUpsOut as t (t.id)}
+				<li class="flex items-center gap-3 px-4 py-3 text-sm">
+					<span class="flex-1">
+						Asked <a href="/u/{t.other.username}" class="font-medium hover:text-accent"
+							>{t.other.displayName || t.other.username}</a
+						>
+						to team up
+						<span class="text-xs text-muted">· {t.jam.title} · {relativeTime(t.createdAt)}</span>
+					</span>
+					<form method="POST" action="?/cancelTeamUp" use:enhance={withToasts()}>
+						<input type="hidden" name="teamUpId" value={t.id} />
+						<button class="text-xs text-muted hover:text-accent">Withdraw</button>
+					</form>
+				</li>
+			{/each}
 			{#each data.outgoing as item (item.id)}
 				<li class="flex items-center gap-3 px-4 py-3 text-sm">
 					<span class="flex-1">

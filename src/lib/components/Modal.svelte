@@ -13,6 +13,10 @@
 		onclose?.();
 	}
 	let dialog: HTMLDialogElement | undefined = $state();
+	// Unique per instance: a page can hold several modals, and duplicate ids would give
+	// every dialog the first one's accessible name.
+	const uid = $props.id();
+	const titleId = `modal-title-${uid}`;
 
 	$effect(() => {
 		if (!dialog) return;
@@ -26,11 +30,11 @@
 	onclose={close}
 	onclick={(e) => e.target === dialog && close()}
 	class="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-0 text-text shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
-	aria-labelledby="modal-title"
+	aria-labelledby={titleId}
 >
 	<div class="p-5 sm:p-6">
 		<div class="mb-4 flex items-start justify-between gap-4">
-			<h2 id="modal-title" class="text-lg font-semibold">{title}</h2>
+			<h2 id={titleId} class="text-lg font-semibold">{title}</h2>
 			<button
 				type="button"
 				class="-m-1 p-1 text-xl leading-none text-muted hover:text-text"

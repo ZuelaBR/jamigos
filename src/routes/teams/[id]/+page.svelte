@@ -24,6 +24,8 @@
 	const myPending = $derived(data.pending.find((p) => p.user.id === me?.id));
 	const justCreated = $derived(page.url.searchParams.get('created') === '1');
 	const justJoined = $derived(page.url.searchParams.get('joined') === '1');
+	const justTeamedUp = $derived(page.url.searchParams.get('teamup') === '1');
+	const owner = $derived(data.members.find((m) => m.id === team.ownerId));
 	const loginHref = $derived(`/login?next=${encodeURIComponent(page.url.pathname)}`);
 	const errors = $derived(form && 'errors' in form ? (form.errors as Record<string, string>) : {});
 
@@ -52,7 +54,29 @@
 	>← {data.jam.title}</a
 >
 
-{#if justCreated && data.isOwner}
+{#if justTeamedUp && data.isMember}
+	<div
+		class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ok/40 bg-ok/10 p-4 text-sm"
+	>
+		<p>
+			<PartyPopper
+				size={16}
+				class="mr-1.5 inline-block align-[-3px] text-ok"
+				aria-hidden="true"
+			/><strong>You're a team!</strong>
+			{#if data.isOwner}
+				We named it <strong>{team.name}</strong>. Give it a proper name and list the roles you still
+				need.
+			{:else}
+				It's called <strong>{team.name}</strong> for now. {owner?.displayName || owner?.username} owns
+				the team and can rename it.
+			{/if}
+		</p>
+		{#if data.isOwner}
+			<button class="btn-primary btn-sm" onclick={() => (editOpen = true)}>Rename team</button>
+		{/if}
+	</div>
+{:else if justCreated && data.isOwner}
 	<div class="mt-4 rounded-xl border border-ok/40 bg-ok/10 p-4 text-sm">
 		<PartyPopper
 			size={16}

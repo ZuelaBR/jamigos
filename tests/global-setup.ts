@@ -23,7 +23,9 @@ export default async function globalSetup(config: FullConfig) {
 		if (!res.ok) throw new Error(`Seeding jams failed: ${res.status} ${await res.text()}`);
 	}
 
-	const used = config.projects.map((p) => p.metadata.jam as string);
+	const used = config.projects.flatMap((p) =>
+		[p.metadata.jam, p.metadata.teamUpJam].filter(Boolean)
+	) as string[];
 	for (const slug of used) {
 		if (!jams.some((j) => j.slug === slug))
 			throw new Error(`Test jam "${slug}" is not in the fixtures`);

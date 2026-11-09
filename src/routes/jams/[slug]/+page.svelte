@@ -5,10 +5,12 @@
 	import Check from '@lucide/svelte/icons/check';
 	import CircleCheck from '@lucide/svelte/icons/circle-check';
 	import Hand from '@lucide/svelte/icons/hand';
+	import Handshake from '@lucide/svelte/icons/handshake';
 	import Mail from '@lucide/svelte/icons/mail';
 	import PartyPopper from '@lucide/svelte/icons/party-popper';
 	import UserRoundSearch from '@lucide/svelte/icons/user-round-search';
 	import Users from '@lucide/svelte/icons/users';
+	import ContactButton from '#lib/components/ContactButton.svelte';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import Modal from '#lib/components/Modal.svelte';
 	import PlayerCard from '#lib/components/PlayerCard.svelte';
@@ -95,6 +97,7 @@
 	let teamOpen = $state(false);
 	let requestTeam = $state<(typeof board.teams)[number] | null>(null);
 	let inviteUser = $state<(typeof board.posts)[number]['user'] | null>(null);
+	let teamUpUser = $state<(typeof board.posts)[number]['user'] | null>(null);
 	let pending = $state(false);
 	const setPending = (v: boolean) => (pending = v);
 
@@ -109,6 +112,14 @@
 		viewer?.invited.find((r) => r.userId === userId)?.requestId;
 	const teamName = (teamId: string) => board.teams.find((t) => t.id === teamId)?.name ?? 'A team';
 	const canInvite = $derived(!!viewer?.isOwner && myTeam?.status === 'open');
+	// Solo jammers (signed in, not on a team) can team up with other solo jammers.
+	const canTeamUp = $derived(!!data.me && !viewer?.myTeamId);
+	const teamUpSentTo = (userId: string) =>
+		viewer?.teamUpsSent.find((t) => t.userId === userId)?.teamUpId;
+	const teamUpFrom = (userId: string) =>
+		viewer?.teamUpsReceived.find((t) => t.from.id === userId)?.teamUpId;
+	const displayName = (u: { displayName: string | null; username: string }) =>
+		u.displayName || u.username;
 </script>
 
 <svelte:head><title>{jam.title} · Find teammates · Jamigos</title></svelte:head>
@@ -217,6 +228,33 @@
 				</form>
 			</div>
 		{/each}
+
+		{#each viewer?.teamUpsReceived ?? [] as t (t.teamUpId)}
+			<div class="mt-3 rounded-lg border border-accent/50 bg-accent/10 px-3 py-2">
+				<div class="flex flex-wrap items-center justify-between gap-3">
+					<p class="text-sm">
+						<Handshake
+							size={16}
+							class="mr-1 inline-block align-[-3px] text-accent"
+							aria-hidden="true"
+						/><a class="font-bold hover:underline" href="/u/{t.from.username}"
+							>{displayName(t.from)}</a
+						> wants to team up with you!
+					</p>
+					<form
+						method="POST"
+						action="?/respondTeamUp"
+						class="flex gap-2"
+						use:enhance={withToasts()}
+					>
+						<input type="hidden" name="teamUpId" value={t.teamUpId} />
+						<button class="btn-primary btn-sm" name="accept" value="1">Team up</button>
+						<button class="btn-ghost btn-sm" name="accept" value="0">Decline</button>
+					</form>
+				</div>
+				{#if t.message}<p class="mt-1.5 text-sm text-muted">"{t.message}"</p>{/if}
+			</div>
+		{/each}
 	</div>
 </section>
 
@@ -304,7 +342,6 @@
 						viewerTimezone={data.me?.timezone}
 					>
 						{#snippet actions()}
-							<a href="/u/{post.user.username}" class="btn-ghost btn-sm">View profile</a>
 							{#if canInvite && myTeam}
 								{@const inviteId = inviteIdFor(post.user.id)}
 								{#if inviteId}
@@ -319,7 +356,30 @@
 										>Invite to {myTeam.name}</button
 									>
 								{/if}
+							{:else if canTeamUp}
+								{@const sentId = teamUpSentTo(post.user.id)}
+								{@const receivedId = teamUpFrom(post.user.id)}
+								{#if receivedId}
+									<form method="POST" action="?/respondTeamUp" use:enhance={withToasts()}>
+										<input type="hidden" name="teamUpId" value={receivedId} />
+										<button class="btn-primary btn-sm" name="accept" value="1"
+											><Handshake size={14} aria-hidden="true" />Accept team-up</button
+										>
+									</form>
+								{:else if sentId}
+									<form method="POST" action="?/cancelTeamUp" use:enhance={withToasts()}>
+										<input type="hidden" name="teamUpId" value={sentId} />
+										<button class="btn-ghost btn-sm" title="Cancel request"
+											><Check size={14} aria-hidden="true" />Team-up sent · Undo</button
+										>
+									</form>
+								{:else}
+									<button class="btn-primary btn-sm" onclick={() => (teamUpUser = post.user)}
+										><Handshake size={14} aria-hidden="true" />Team up</button
+									>
+								{/if}
 							{/if}
+							<ContactButton user={post.user} signedIn={!!data.me} {loginHref} />
 						{/snippet}
 					</PlayerCard>
 				{/each}
@@ -521,6 +581,46 @@
 			<div class="flex justify-end gap-2">
 				<button type="button" class="btn-ghost" onclick={() => (inviteUser = null)}>Cancel</button>
 				<button class="btn-primary" disabled={pending}>Send invite</button>
+			</div>
+		</form>
+	{/if}
+</Modal>
+
+<!-- Team-up modal (solo + solo) -->
+<Modal
+	open={!!teamUpUser}
+	onclose={() => (teamUpUser = null)}
+	title="Team up with {teamUpUser ? displayName(teamUpUser) : ''}"
+>
+	{#if teamUpUser && data.user}
+		<form
+			method="POST"
+			action="?/teamUp"
+			class="space-y-4"
+			use:enhance={withToasts({ pending: setPending, onSuccess: () => (teamUpUser = null) })}
+		>
+			<input type="hidden" name="userId" value={teamUpUser.id} />
+			<p class="text-sm text-muted">
+				If {displayName(teamUpUser)} says yes, we'll create a team for the two of you called
+				<strong class="text-text">{displayName(data.user)} & {displayName(teamUpUser)}</strong>. You
+				can rename it and invite more people later.
+			</p>
+			<div>
+				<label class="label" for="teamup-message"
+					>Message <span class="font-normal text-muted">(optional)</span></label
+				>
+				<textarea
+					id="teamup-message"
+					name="message"
+					rows="3"
+					maxlength="300"
+					class="w-full"
+					placeholder="Hi! I'm a programmer and love your art. Want to make something cozy?"
+				></textarea>
+			</div>
+			<div class="flex justify-end gap-2">
+				<button type="button" class="btn-ghost" onclick={() => (teamUpUser = null)}>Cancel</button>
+				<button class="btn-primary" disabled={pending}>Send request</button>
 			</div>
 		</form>
 	{/if}
