@@ -348,3 +348,22 @@ describe('withdrawal racing acceptance', () => {
 		);
 	});
 });
+
+describe('unlimited team size', () => {
+	it('allows requests, invites and acceptance beyond eight members', async () => {
+		const owner = await makeUser('owner');
+		const t = await createTeam(db, jam, owner.id, team('Large team'));
+		for (let i = 0; i < 9; i++) {
+			const member = await makeUser('member');
+			if (i % 2) await inviteUser(db, t.id, owner.id, member.id, '');
+			else await requestToJoin(db, t.id, member.id, '');
+			const req = (await db.query.teamRequests.findFirst({
+				where: eq(teamRequests.userId, member.id)
+			}))!;
+			await respondToRequest(db, req.id, i % 2 ? member.id : owner.id, true);
+		}
+		expect(await db.select().from(teamMembers).where(eq(teamMembers.teamId, t.id))).toHaveLength(
+			10
+		);
+	});
+});

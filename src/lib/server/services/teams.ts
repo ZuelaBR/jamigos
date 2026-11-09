@@ -18,7 +18,6 @@ import type { Role } from '#lib/profile.ts';
 export class ServiceError extends Error {}
 
 const MAX_PENDING_OUTGOING = 20;
-export const MAX_TEAM_SIZE = 8;
 
 const publicUser = {
 	id: users.id,
@@ -371,10 +370,8 @@ async function assertNoPending(db: Db, teamId: string, userId: string) {
 		);
 }
 
-async function assertTeamHasRoom(db: Db, team: Team) {
+function assertTeamIsOpen(team: Team) {
 	if (team.status === 'full') throw new ServiceError('This team is not looking for more members.');
-	if ((await memberCount(db, team.id)) >= MAX_TEAM_SIZE)
-		throw new ServiceError(`Teams are limited to ${MAX_TEAM_SIZE} members.`);
 }
 
 export async function requestToJoin(db: Db, teamId: string, userId: string, message: string) {
@@ -382,7 +379,7 @@ export async function requestToJoin(db: Db, teamId: string, userId: string, mess
 	if (!team) throw new ServiceError('That team no longer exists.');
 	if (await membershipForJam(db, team.jamId, userId))
 		throw new ServiceError("You're already on a team for this jam.");
-	await assertTeamHasRoom(db, team);
+	assertTeamIsOpen(team);
 	await assertNoPending(db, teamId, userId);
 
 	const [outgoing] = await db
@@ -412,7 +409,7 @@ export async function inviteUser(
 	if (userId === actorId) throw new ServiceError("You can't invite yourself.");
 	if (await membershipForJam(db, team.jamId, userId))
 		throw new ServiceError('They are already on a team for this jam.');
-	await assertTeamHasRoom(db, team);
+	assertTeamIsOpen(team);
 	await assertNoPending(db, teamId, userId);
 
 	const [outgoing] = await db
@@ -469,7 +466,7 @@ export async function respondToRequest(
 				: 'They already joined another team.'
 		);
 	}
-	await assertTeamHasRoom(db, team);
+	assertTeamIsOpen(team);
 
 	try {
 		await db.batch([
