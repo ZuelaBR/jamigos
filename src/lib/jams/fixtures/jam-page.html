@@ -1,0 +1,578 @@
+<!DOCTYPE HTML><html lang="en"><head><meta charset="UTF-8"/><META name="GENERATOR" content="IBM HomePage Builder 2001 V5.0.0 for Windows"><meta name="msvalidate.01" content="3BB4D18369B9C21326AF7A99FCCC5A09" /><meta property="fb:app_id" content="537395183072744" /><title>GMTK Game Jam 2027 - itch.io</title><meta name="csrf_token" value="WyJiellRIiwxNzk0MTk4MTk0LCJGVHpXUk41Ylk0UW1HWnAiXQ==.Ct2Lxw1bd1p8gqygdMfzrKtVoM0=" /><meta content="GMTK Game Jam 2027" property="og:title"/><meta content="itch.io" property="og:site_name"/><meta content="4503599627724030" property="twitter:account_id"/><link rel="manifest" href="/static/manifest.json"/><script type="application/ld+json">{"itemListElement":[{"position":1,"item":{"@id":"https:\/\/itch.io\/jams","name":"Jams"},"@type":"ListItem"}],"@type":"BreadcrumbList","@context":"http:\/\/schema.org"}</script><meta content="summary_large_image" name="twitter:card"/><meta content="https://img.itch.zone/aW1nLzI5MzM2MDAzLnBuZw==/508x254%23mb/KshR%2F0.png" property="twitter:image"/><meta content="@itchio" name="twitter:site"/><meta content="GMTK Game Jam 2027" name="twitter:title"/><meta content="A game jam from 2027-08-11 to 2027-08-15 hosted by Game Maker&#039;s Toolkit. GMTK Game Jam 2027 GMTK Game Jam is an annual game making marathon, where individuals and teams try to make a game that fits a theme, in a super short..." name="twitter:description"/><meta content="A game jam from 2027-08-11 to 2027-08-15 hosted by Game Maker&#039;s Toolkit. GMTK Game Jam 2027 GMTK Game Jam is an annual game making marathon, where individuals and teams try to make a game that fits a theme, in a super short..." property="og:description"/><meta content="A game jam from 2027-08-11 to 2027-08-15 hosted by Game Maker&#039;s Toolkit. GMTK Game Jam 2027 GMTK Game Jam is an annual game making marathon, where individuals and teams try to make a game that fits a theme, in a super short..." name="description"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#FA5C5C" name="theme-color"/><meta content="https://img.itch.zone/aW1nLzI5MzM2MDAzLnBuZw==/original/k4j3XW.png" property="og:image"/><link href="https://static.itch.io/jam.css?1794195660" rel="stylesheet"/><script type="text/javascript">window.itchio_translations_url = 'https://static.itch.io/translations';</script><script src="https://static.itch.io/lib.min.js?1794195660" type="text/javascript"></script><script src="https://static.itch.io/bundle.min.js?1794195660" type="text/javascript"></script><script id="lib_react_src" data-src="https://static.itch.io/react.min.js?1794195660"></script><script src="https://static.itch.io/jam.min.js?1794195660" type="text/javascript"></script><script type="text/javascript">I.current_user = null;</script><script type="text/javascript">if (!window.location.hostname.match(/localhost/)) {      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', "G-36R7NPBMLS", {});
+      (function(d, t, s, m) {
+        s = d.createElement(t);
+        s.src = "https:\/\/www.googletagmanager.com\/gtag\/js?id=G-36R7NPBMLS";
+        s.async = 1;
+        m = d.getElementsByTagName(t)[0];
+        m.parentNode.insertBefore(s, m);
+      })(document, "script");
+      }</script><style type="text/css" id="jam_theme">:root{--itchio_ui_bg: #282828;--itchio_editor_toolbar_border: #e5e5e5;--itchio_editor_menu_border: #e5e5e5;--itchio_editor_accent_bg: #186f85;--itchio_editor_accent_fg: #ffffff;}body{background-color: #000000;}.jam_page_wrap{color: #222222;background-color: #000000;font-family: Lato,Lato,LatoExtended,sans-serif;font-size: 100%;--itchio_border_radius: initial;--itchio_link_color: #186f85;--itchio_border_color: #e5e5e5;--itchio_button_color: #186f85;--itchio_button_fg_color: #ffffff;--itchio_button_shadow_color: #0a6177;--itchio_button_border_color: #0a6177;--itchio_button_hover_color: #20778d;--itchio_button_active_color: #136a80;--itchio_editor_toolbar_border: #e5e5e5;--itchio_editor_menu_border: #e5e5e5;--itchio_editor_accent_bg: #186f85;--itchio_editor_accent_fg: #ffffff;}.jam_body{border-radius: var(--itchio_border_radius,0);}.view_jam_page h1,.view_jam_page h2,.view_jam_page h3,.view_jam_page h4,.view_jam_page h5,.view_jam_page h6{}.view_jam_page .jam_body,.view_jam_page .grid_outer{background-color: rgba(255, 255, 255, 1);}.view_jam_page .jam_body{box-shadow: 0 0 0 2px transparent;}.view_jam_page .grid_outer .itch_footer{border-top: 1px solid #d9d9d9 !important;background-color: #e5e5e5;}.view_jam_page .game_grid_widget .game_cell .game_text,.view_jam_page .grid_outer .game_count,.view_jam_page .grid_outer .footer_submissions{color: #666666 !important;}.view_jam_page .game_grid_widget .game_cell .game_platform,.view_jam_page .game_grid_widget .game_cell .game_genre,.view_jam_page .game_grid_widget .game_cell .game_author a,.view_jam_page .grid_outer .powerd_by{color: #8c8c8c !important;}.view_jam_page .header_tabs .community_activity{background-color: #e5e5e5;color: #222222;}.view_jam_page .jam_filter_picker .filter_item{color: #8c8c8c !important;}.view_jam_page .jam_filter_picker .filter_item:hover,.view_jam_page .jam_filter_picker .filter_item.active{color: #666666 !important;border-color: #186f85 !important;}.view_jam_page .jam_filter_picker .divider{color: #666666;}:root {
+  --my-string: "The Jam Begins In:";
+  --primary-colour: #186f85;
+  --secondary-colour: #0c324d;
+  --pale-colour: #f6fdff;
+  --icon-colour:  #d6e9ef;
+}
+
+.custom-footerimg{max-width:20% !important;}
+
+img {
+  max-width: 315px !important;
+  width: 100%;
+  height: auto;
+}
+
+table {
+  border-collapse: collapse;
+  border: none !important;
+  width: 100%; /* optional: makes it stretch full width */
+}
+
+/*Main Page*/
+
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+body {
+  position: relative;
+  z-index: 2;
+}
+
+
+
+.stats_container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat_box {
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .view_jam_page .jam_header_widget .stats_container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  }
+}
+
+
+.header_tab[data-label="tab_view_jam_screenshots"],
+.header_tab[href*="/screenshots"] {
+  display: none !important;
+}
+
+.header_tab[data-label="tab_view_jam_feed"],
+.header_tab[href*="/feed"] {
+  display: none !important;
+}
+
+.jam_page_wrap {
+  background-size: 50%;
+}
+
+.jam_body {
+border-radius: 10px;
+margin-top:20px;
+}
+
+.view_jam_page{
+margin-bottom:50px;
+}
+
+/*Header*/
+
+@media screen and (min-width: 800px){
+.view_jam_page .jam_banner{max-width:500px;
+margin-top:20px;}
+}
+
+.jam_banner {
+  animation: fadeUp 0.5s ease-out;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view_jam_page .jam_header_widget{
+text-align:center;
+color:#ffffff;
+font-weight:bold;
+border-bottom:1.5px solid var(--secondary-colour);
+background: linear-gradient(to bottom, var(--primary-colour), var(--secondary-colour));
+}
+
+
+
+
+
+.view_jam_page .jam_header_widget a {
+  color: #ffffff;
+text-decoration: underline;
+}
+
+.view_jam_page .jam_header_widget a:hover {
+  text-decoration: underline; /* Optional: add underline on hover */
+}
+
+/*Hides the name of the jam*/
+.jam_title_header{display:none;}
+
+/*Puts the number joined in the middle of the header*/
+.view_jam_page .jam_header_widget .header_columns{
+display:inline;}
+.stats_container{margin-bottom:20px;}
+
+opacity: 0.9;
+}
+
+.stat_value{display:none;}/
+
+/*Removes the overview / edit jam buttons*/
+.view_jam_page .header_tabs{
+display:none;
+}
+
+/*Submitter widget*/
+
+.jam_submitter_widget{
+border-radius: 16px;
+}
+
+/*Fixes the submission date*/
+.jam_submitter_widget .date_data{
+text-align:center;
+}
+
+
+
+
+/*Changes the text of the countdown*/
+.countdown_label{
+visibility:hidden;
+}
+
+.countdown_label:after {
+  visibility: visible;
+  color: var(--primary-colour);
+  content: var(--my-string);
+  font-weight: bold;
+  animation: countdown-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/*Animates the join jam button*/
+.view_jam_page .join_jam_btn{
+animation: button-pulse 2s ease-in-out infinite !important;
+}
+
+/*Animates the join jam button*/
+.view_jam_page .join_jam_btn{
+animation: button-pulse 2s ease-in-out infinite !important;
+}
+
+/*Main HTML*/
+
+/*Headers*/
+.custom-header{
+background: linear-gradient(to bottom, var(--primary-colour), var(--secondary-colour));
+    border-radius:10px;
+color:#fff;
+text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
+    padding: .8em;
+text-align:center;
+box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.custom-header-sm{
+    border: 1.5px solid #aaa;
+    border-radius: 5px;
+    padding: .5em;
+text-align:left;
+}
+
+.custom-notice{
+background-color:#f15353;
+color:white;
+border: 1.5px solid #8B0000;
+border-radius: 5px;
+padding: .5em;
+text-align:center;
+}
+
+/*Alerts*/
+
+.custom-alert{
+background-color:#d10000;
+padding:20px;
+color:#fff;
+border-radius:10px;
+font-weight: bold;
+text-align:center;
+}
+
+.custom-alerttext{
+font-size: 24px;
+}
+
+
+/*Buttons*/
+
+a[target=_votebutton] {
+color:#fff;
+background: var(--primary-colour);
+border: 2px #fff;
+border-radius: 60px;
+padding:25px;
+text-decoration: none;
+font-size: 50px;
+}
+
+a[target= _votebutton]:hover {
+color:#fff;
+background: var(--primary-colour);
+}
+
+
+a[target=_button] {
+color:#fff;
+background: var(--primary-colour);
+border: 2px #fff;
+border-radius: 20px;
+padding: 10px;
+text-decoration: none;
+font-size: 16px;
+
+}
+
+a[target=_button]:hover {
+color:#fff;
+background: var(--secondary-colour);
+box-shadow: 0 6px 16px var(--secondary-colour);
+}
+
+/*YouTube video bg*/
+div.text-center{background:var(--secondary-colour);
+border-radius:5px;}
+
+/*Footer with GMTK logo*/
+p.custom-footer{background:#000;
+padding:2px;
+text-align:center;
+border-radius:5px;}
+
+
+/*Animation*/
+
+.owner_tools {
+        background: none !important;
+    }/* Content Styles */
+    @keyframes button-pulse {
+        from {
+            transform: scale(1);
+        }
+
+        25% {
+            transform: scale(1.2);
+        }
+
+        50% {
+            transform: scale(1);
+        }
+    }
+
+
+.custom-container {
+  margin: 0 auto;
+}
+
+.custom-card {
+border: 1px solid var(--primary-colour);
+  background-color: var(--pale-colour);
+  border-radius: 8px;
+  padding-left: 16px;
+padding-right:16px;
+padding-top:16px;
+margin-left:10px;
+margin-right:10px;
+  margin-bottom: 20px;
+  transition: transform 0.2s ease;
+}
+
+.custom-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  margin: 0 0 12px;
+  line-height: 1.2;
+
+}
+
+.custom-number {
+  width: 60px;
+  height: 60px;
+  background-color: var(--icon-colour);
+ border-style: solid;
+border-color: var(--secondary-colour);
+  border-radius: 50%;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+flex-shrink:0;
+  justify-content: center;
+color: var(--pale-colour);
+ font-size:32px;
+font-weight:bold;
+
+}
+
+.custom-card-title {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.custom-description {
+  display: flex;
+font-size:0.8em;
+padding-top:10px;
+font-weight:normal;
+  margin-bottom: 10px;
+  line-height: 1.55;
+  margin-top: 0.5rem;
+}
+
+.custom-card details[open] summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.custom-card summary::-webkit-details-marker {
+  display: none;
+}
+
+
+
+/* Fade in animation for content */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+details {
+    border: 1px solid var(--secondary-colour);
+    border-radius: 6px;
+    padding: .5em .5em 0;
+margin-bottom: 1em;
+}
+
+.custom-details-content {
+  padding: 12px 16px;
+  border-top: 1px dashed var(--secondary-colour);
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+details[open] .custom-details-content {
+
+  animation: details-open 0.3s ease forwards;
+
+}
+
+@keyframes details-open {
+
+  from {
+
+    opacity: 0;
+
+    transform: translateY(-8px);
+
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform: translateY(0);
+
+  }
+
+}
+
+summary {
+    font-weight: bold;
+    margin: -.5em -.5em 0;
+    padding: .8em;
+
+}
+
+
+  .custom-checklist {
+    list-style: none;
+    padding: 0;
+    font-family: sans-serif;
+  }
+  .custom-checklist li {
+    margin: 6px 0;
+  }
+  .custom-checklist details {
+    border: 1px solid #888;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .custom-checklist summary {
+    list-style: none; /* removes default triangle */
+    cursor: pointer;
+    margin: 0;
+  }
+  .custom-checklist summary::-webkit-details-marker {
+    display: none; /* removes triangle in Chrome/Safari */
+  }
+  .custom-checklist summary::before {
+    content: "☐  ";
+  }
+  .custom-checklist details[open] summary::before {
+    content: "☑  ";
+  }
+  .custom-checklist details[open] summary {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+  .custom-checklist details[open] {
+    background: #4caf50;
+    border-color: #4caf50;
+  }
+  .custom-checklist details[open] summary {
+    color: white;
+  } </style></head><body data-host="itch.io" class="locale_en jam_layout_widget layout_widget responsive no_theme_toggle" data-page_name="view_jam"><div id="jam_layout_header_9488264" class="small_logo jam_layout_header_widget header_widget base_widget gray"><a class="skip_to_main" href="#maincontent">Skip to main content</a><div class="primary_header"><h1 title="itch.io - indie game hosting marketplace" class="title"><a title="itch.io - indie game hosting marketplace" href="/" class="header_logo"><span class="visually_hidden">itch.io</span><img height="199" width="775" class="full_logo" src="https://static.itch.io/images/logo-black-new.svg" alt="itch.io logo &amp; title"/><img height="235" width="262" class="minimal_logo" src="https://static.itch.io/images/itchio-textless-black.svg" alt="itch.io logo"/></a></h1><div class="header_buttons"><a data-label="browse" class="header_button browse_btn" href="/games">Browse Games</a><a data-label="jams" class="header_button jams_btn" href="/jams">Game Jams</a><a data-label="developers" class="header_button developers_btn" href="/developers"><span aria-hidden="true" class="icon icon-upload"></span>Upload Game</a><a data-label="devlogs" class="header_button devlogs_btn" href="/devlogs">Developer Logs</a><a data-label="community.home" class="header_button community.home_btn" href="/community">Community</a></div><form class="game_search" action="/search"><input class="search_input" placeholder="Search for games, jams, tags or creators" required="required" type="text" name="q"/><button class="submit_btn" aria-label="Search"><svg width="18" class="svgicon icon_search" fill="none" stroke="currentColor" stroke-linecap="round" role="img" height="18" viewBox="0 0 24 24" stroke-linejoin="round" stroke-width="3" aria-hidden version="1.1"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button></form><div id="user_panel_2669183" class="user_panel_widget base_widget"><a data-register_action="header" data-label="log_in" class="panel_button" href="/login">Log in</a><a data-register_action="header" data-label="register" class="panel_button register_button" href="/register">Register</a></div></div><div class="header_dropdown" data-target="browse"><a href="/games/store">Indie game store</a><a href="/games/free">Free games</a><a href="/games/fun">Fun games</a><a href="/games/tag-horror">Horror games</a><div class="divider"></div><a href="/tools">Game development</a><a href="/game-assets">Assets</a><a href="/comics">Comics</a><div class="divider"></div><a href="/sales">Sales</a><a href="/bundles">Bundles</a><div class="divider"></div><a href="/jobs">Jobs</a><div class="divider"></div><a href="/tags">Tags</a><a href="/game-development/engines">Game Engines</a></div></div><div class="jam_page_wrap" id="wrapper"><div id="view_jam_3101474" class="view_jam_page view_jam_base_page page_widget base_widget view_jam_default before_start has_banner"><div class="jam_banner_outer"><img class="jam_banner " src="https://img.itch.zone/aW1nLzI5MTE1MDQwLnBuZw==/original/8ZTMSe.png"/></div><div class="jam_body"><div id="jam_header_4086713" class="jam_header_widget base_widget"><div class="header_inner"><div class="header_columns"><div class="title_colum"><h1 class="jam_title_header"><a href="/jam/gmtk-2027">GMTK Game Jam 2027</a></h1><div class="jam_host_header">Hosted by <a href="https://gmtk.itch.io">Game Maker&#039;s Toolkit</a></div></div><div class="stats_container"><div class="stat_box"><div class="stat_value">1,973</div><div class="stat_label">Joined</div></div></div></div><div class="header_tabs"><a href="/jam/gmtk-2027" class="header_tab active" data-label="tab_view_jam">Overview</a></div></div></div><div class="submitter_outer"><div id="jam_submitter_8673300" class="jam_submitter_widget base_widget before_start"><div class="date_data">Submissions open from <span class="date_format" data-format="MMMM Do YYYY [at] h:mm A">2027-08-11 17:00:00</span> to <span class="date_format" data-format="MMMM Do YYYY [at] h:mm A">2027-08-15 17:00:00</span></div><div class="countdown"><span class="countdown_label">Starts in</span><div class="times"><div class="time_block" data-name="years"><div class="block_value"></div><div class="block_label">years</div></div><div class="time_block" data-name="months"><div class="block_value"></div><div class="block_label">months</div></div><div class="time_block" data-name="days"><div class="block_value"></div><div class="block_label">days</div></div><div class="time_block" data-name="hours"><div class="block_value"></div><div class="block_label">hours</div></div><div class="time_block" data-name="minutes"><div class="block_value"></div><div class="block_label">minutes</div></div><div class="time_block" data-name="seconds"><div class="block_value"></div><div class="block_label">seconds</div></div></div></div><div class="state_action"><button data-href="/jam/390380/join" data-method="post" class="button fat submitter_button join_jam_btn">Join jam</button></div></div></div><div class="jam_content user_formatted"><h2 class="custom-header">GMTK Game Jam 2027</h2>
+<p>GMTK Game Jam is an annual game making marathon, where individuals and teams try to make a game that fits a theme, in a super short time period.</p>
+<p>Each year thousands of games are submitted as designers improve their skills, flex their creative muscles, and try to get their game featured on <a style="" href="https://www.youtube.com/channel/UCqJ-Xo29CKyLTjn6z2XwYAw" referrerpolicy="origin" rel="nofollow noopener">Game Maker’s Toolkit</a>.&nbsp;You can see (and play!) the <a style="font-size: inherit" href="https://gmtk.itch.io">past winners here</a>.&nbsp;</p>
+<p>Some games even go on to be full games, released on Steam or console. <a href="https://backloggd.com/u/GameMakersTK/list/gmtk-game-jam-games/" referrerpolicy="origin" rel="nofollow noopener">You can see&nbsp;the full list on Backloggd</a>.</p>
+<h2 class="custom-header">Quick Links</h2>
+<p class="text-center"><br><a href="https://discord.gg/pd4rQKU" target="_button" referrerpolicy="origin" rel="nofollow noopener">Discord</a>&nbsp;<a href="https://bsky.app/profile/gamemakerstoolkit.com" target="_button" referrerpolicy="origin" rel="nofollow noopener">Bluesky</a>&nbsp;<a href="https://www.youtube.com/channel/UCqJ-Xo29CKyLTjn6z2XwYAw" target="_button" style="" referrerpolicy="origin" rel="nofollow noopener">YouTube<br></a></p>
+<p></p>
+<p><br></p>
+<h2 class="custom-header">Voting categories</h2>
+<p>This jam has&nbsp;five voting criteria:</p>
+<ul><li>Creativity</li><li>Enjoyment</li><li>Narrative</li><li>Artwork</li><li>Audio</li></ul>
+<p>There is no &quot;overall&quot; ranking that combines all of these scores. So please don&#x27;t feel like your game needs to be perfect in all of these categories!</p>
+<p>After the jam is over, GMTK host Mark Brown will play some of the entries and make a video about his favourites in a video on Game Maker&#x27;s Toolkit.</p>
+<h2 class="custom-header">Rules</h2>
+<p>GMTK Game Jam has 6 rules that must be followed to make sure the jam is fair, fun, and accessible to as many people as possible.</p>
+<div class="custom-container">
+  <div class="custom-card">
+        <div class="custom-card-header">
+<div class="custom-number">🕒</div>
+      <div class="custom-card-title">
+Your game must be made during the jam
+<div class="custom-description">
+The joy of a jam is that everyone starts making their game at the same time! So only start making your game when the countdown is over and the theme is revealed.</div><div class="custom-description">That being said: you may use any pre-existing code, art and audio assets you have the legal right to use. But you shouldn&#x27;t make stuff ahead of time that is specifically for this jam. 
+</div>
+</div>
+    </div>
+  </div>
+  <div class="custom-card">
+        <div class="custom-card-header">
+<div class="custom-number">💰</div>
+      <div class="custom-card-title">
+Your game must be free
+<div class="custom-description">
+Voters must be able to try your game without paying money.
+</div>
+</div>
+    </div>
+  </div>
+  <div class="custom-card">
+        <div class="custom-card-header">
+<div class="custom-number">💾</div>
+      <div class="custom-card-title">
+Your game must run on Windows, with keyboard and mouse
+<div class="custom-description">
+You should have a version that works on Windows (either in browser or as a download). And you shouldn&#x27;t require the player to download any additional software, or own any additional hardware beyond a keyboard and mouse.&nbsp;</div><div class="custom-description">If you want to also provide a Mac build and&nbsp;controller support... that&#x27;s fine! But only if you&#x27;ve got a Windows build that works with a keyboard and/or mouse.
+</div>
+</div>
+    </div>
+  </div>
+  <div class="custom-card">
+        <div class="custom-card-header">
+<div class="custom-number">🔗</div>
+      <div class="custom-card-title">
+Your game must be uploaded to itch.io
+<div class="custom-description">You shouldn&#x27;t upload it somewhere else and then link to it from your game&#x27;s page.&nbsp;</div><div class="custom-description">This is because new uploads to itch are locked during the voting period to&nbsp;ensure that you can&#x27;t change or improve your game after the jam ends. We cannot guarantee this if your game is hosted anywhere else!</div>
+</div>
+    </div>
+  </div>
+  <div class="custom-card">
+        <div class="custom-card-header">
+<div class="custom-number">☠️</div>
+      <div class="custom-card-title">
+Your game must be safe for work (SFW)
+<div class="custom-description">
+Please avoid strong language, excessive gore, and suggestive content. And definitely don&#x27;t include any nudity, or hateful language or visuals.</div><div class="custom-description">Think PEGI 16 or T for Teen and you&#x27;ll be good.</div>
+</div>
+    </div>
+  </div>
+  <div class="custom-card">
+        <div class="custom-card-header">
+<div class="custom-number">🤖</div>
+      <div class="custom-card-title">
+Your game must not use AI generated art or audio assets
+<div class="custom-description">
+Do not use generative AI tools to make the art or audio for your game, or your itch.io thumbnail. If you&#x27;re not much for an artist or musician please find some pre-existing assets (see &quot;tools and assets&quot; below), or work with another user (see our team finder website).
+</div>
+</div>
+    </div>
+  </div>
+</div>
+<h2 class="custom-header">Useful stuff</h2>
+<details>
+    <summary><strong style="color:#186f85">Other details</strong></summary>
+   <p>The GMTK Game Jam is an online game jam, so it&#x27;s open to anyone, from anywhere, of any age.</p><p>If you&#x27;re under the age of 13, a parent or guardian should upload the game.</p><p>There is no limit on the number of people per team, and people can be in multiple teams. You can submit more than one game.</p><p>Only one person needs to join itch.io and submit the game. However, if others on the team also join itch.io, they can be tagged as contributors. (On your game&#x27;s itch page, pick &quot;Edit&quot;, &quot;More&quot;, &quot;Admins&quot;, and follow the instructions).&nbsp;</p><p>You can use any game engine you like. Godot, Unity, and Game Maker are popular choices.</p><p>The itch upload limit is 1GB. You can compress your game as a ZIP, RAR, or 7Zip file (ZIP is preferred). You can also upload larger files via Butler if you really need to.</p><p>You can have online features like multiplayer servers and&nbsp;leaderboards - but files hosted outside of itch.io must not be modified or updated during the voting period - with the only exception being to ensure compliance with itch.io rules (i.e. removing a rule-breaking leaderboard name).</p></details>
+<details>
+    <summary><strong style="color:#186f85">Tools and&nbsp;assets</strong></summary>
+   <p>Here are some places where you can find art, fonts, music, and sound effects for your games.<br></p><p>Many of the assets are eligible for use in the jam but <strong>check the license</strong> before using and <strong>provide credit</strong> in your game’s description!</p><p><strong>Art</strong></p><ul><li><a href="https://opengameart.org" referrerpolicy="origin" rel="nofollow noopener">OpenGameArt</a>&nbsp;(2D + 3D)</li><li><a href="https://www.kenney.nl/assets" referrerpolicy="origin" rel="nofollow noopener">Kenney</a>&nbsp;(2D + 3D)</li><li><a href="https://craftpix.net/freebies/" referrerpolicy="origin" rel="nofollow noopener">CraftPix</a> (2D&nbsp;+ 3D)</li><li><a href="https://game-icons.net" referrerpolicy="origin" rel="nofollow noopener">Game-Icons</a> (2D)</li><li><a href="https://www.textures.com" referrerpolicy="origin" rel="nofollow noopener">Textures.com</a> (Textures)</li><li><a href="https://www.poliigon.com/search?credit=0" referrerpolicy="origin" rel="nofollow noopener">Poliigon</a> (Textures)</li><li><a href="https://poly.pizza" referrerpolicy="origin" rel="nofollow noopener">Poly.pizza</a> (3D)</li><li><a href="https://www.mixamo.com/" referrerpolicy="origin" rel="nofollow noopener">Mixamo</a> (Animations)</li></ul><p><strong>Fonts</strong></p><ul><li><a href="https://github.com/fontsource/fontsource" referrerpolicy="origin" rel="nofollow noopener">Fontsource</a> (Fonts)</li><li><a href="https://www.fontsquirrel.com" referrerpolicy="origin" rel="nofollow noopener">Font Squirrel</a> (Fonts)</li><li><a href="https://fonts.google.com" referrerpolicy="origin" rel="nofollow noopener">Google Fonts</a> (Fonts)</li></ul><p><strong>Audio</strong></p><ul><li><a href="https://freemusicarchive.org" referrerpolicy="origin" rel="nofollow noopener">Free Music Archive</a> (Music)</li><li><a href="https://freesound.org" referrerpolicy="origin" rel="nofollow noopener">Freesound</a>&nbsp;(SFX)</li><li><a href="https://opengameart.org" referrerpolicy="origin" rel="nofollow noopener">OpenGameArt</a>&nbsp;(Music + SFX)</li><li><a href="https://www.kenney.nl/assets?q=audio" referrerpolicy="origin" rel="nofollow noopener">Kenney</a>&nbsp;(Music + SFX)</li><li><a href="https://sonniss.com/gameaudiogdc" referrerpolicy="origin" rel="nofollow noopener">Soniss</a> (SFX)</li><li><a href="https://www.weloveindies.com/en/welcome/jammers" referrerpolicy="origin" rel="nofollow noopener">WeLoveIndies</a> (Music +&nbsp;SFX)</li></ul><p><strong>Tools</strong></p><ul><li><a href="http://www.pentacom.jp/pentacom/bitfontmaker2/" referrerpolicy="origin" rel="nofollow noopener">BitFontMaker2</a> (Fonts)</li><li><a href="https://www.photopea.com" referrerpolicy="origin" rel="nofollow noopener">Photopea</a> (Art)</li><li><a href="https://www.drpetter.se/project_sfxr.html" referrerpolicy="origin" rel="nofollow noopener">sfxr</a> (SFX)</li><li><a href="https://sfbgames.itch.io/chiptone">Chiptone</a> (SFX)</li><li><a href="https://boscaceoil.net" referrerpolicy="origin" rel="nofollow noopener">Bosca Ceoil</a> (Music)</li><li><a href="https://www.beepbox.co/" referrerpolicy="origin" rel="nofollow noopener">BeepBox</a> (Music)</li><li><a href="https://lospec.com/palette-list" referrerpolicy="origin" rel="nofollow noopener">Lospec</a> (Palettes)</li></ul></details>
+<details>
+  <summary><strong style="color:#186f85">Academic certificate</strong></summary>
+   <p>Some academic institutions require students to perform extracurricular work. You may be able to use your time in the GMTK Game Jam for this.&nbsp;If so, you can request an official certificate from the jam&#x27;s organiser, after the jam is finished. <a href="https://gamemakerstoolkit.com/game-jam-certificate/" referrerpolicy="origin" rel="nofollow noopener">Click here</a> to request one.</p></details>
+<details>
+    <summary><strong style="color:#186f85">The legal bit</strong></summary>
+   <p>- Anything you make during the GMTK Game Jam is your property. GMTK claims no rights or ownership of your game.&nbsp;
+</p>
+<p>- Any game submitted to the GMTK Game Jam may show up in a GMTK YouTube video without your express permission.
+</p>
+</details>
+<p></p>
+<p class="custom-footer"><a href="http://gamemakerstoolkit.com" referrerpolicy="origin" rel="nofollow noopener"><img class="custom-footerimg" title="Game Maker's Toolkit" alt="Game Maker's Toolkit" src="https://img.itch.zone/aW1nLzE3MjUxOTQ3LnBuZw==/original/6fCKGH.png" loading="lazy"></a></p></div></div><script id="add_game_to_jam_lightbox_tpl" type="text/template"><div class="add_game_to_jam_lightbox_widget lightbox_widget base_widget force_login lightbox" tabIndex="-1" id="add_game_to_jam_lightbox_6882781" role="dialog"><button class="close_button"><svg width="18" class="svgicon icon_cross2" fill="none" stroke="currentColor" stroke-linecap="round" role="img" height="18" viewBox="0 0 24 24" stroke-linejoin="round" stroke-width="2" aria-hidden version="1.1"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button><h2>Log in to continue</h2><p>This jam is using <a target="_blank" href="http://itch.io">itch.io</a> to host entries. You&#039;ll need to register or log in on
+      itch.io in order to join this jam.</p><p><a data-register_action="jam_submit" href="/login?intent=jam_submit&amp;return_to=https%3A%2F%2Fitch.io%2Fjam%2Fgmtk-2027" class="button">Log in</a><span class="or_split"> or </span><a data-register_action="jam_submit" href="/register?intent=jam_submit&amp;return_to=https%3A%2F%2Fitch.io%2Fjam%2Fgmtk-2027" class="button">Register</a></p></div></script></div></div><script id="loading_lightbox_tpl" type="text/template"><div aria-live="polite" class="lightbox loading_lightbox"><div class="loader_outer"><div class="loader_label">Loading</div><div class="loader_bar"><div class="loader_bar_slider"></div></div></div></div></script><script type="text/javascript">new I.ViewJam('#view_jam_3101474', {"start_date":"2027-08-11 17:00:00","end_date":"2027-08-15 17:00:00","voting_end_date":"2027-08-20 17:00:00","id":390380});init_JamLayoutHeader('#jam_layout_header_9488264', {"autocomplete_props":{"i18n":{"search":"Search","search_placeholder":"Search for games, jams, tags or creators"},"ca_source":25,"ca_types":{"featured_tag":7,"browse_facet":8,"jam":4,"bundle":6,"game":1},"autocomplete_url":"\/autocomplete","search_url":"\/search"}});
+I.setup_page();</script></body></html>

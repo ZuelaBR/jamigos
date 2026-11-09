@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local development.
+ITCH_CLIENT_ID=
+DEV_AUTH=1
+SYNC_SECRET=dev-sync-secret

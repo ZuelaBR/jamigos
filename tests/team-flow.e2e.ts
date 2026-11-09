@@ -1,0 +1,130 @@
+import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+const secret = /^SYNC_SECRET=(.*)$/m.exec(readFileSync('.dev.vars', 'utf8'))![1].trim();
+
+/** Navigate and wait for hydration so clicks aren't lost before JS takes over. */
+async function go(page: Page, url: string) {
+	await page.goto(url);
+	await page.locator('html[data-hydrated]').waitFor();
+}
+
+/** Role/experience pickers use visually-hidden inputs inside styled labels; click the label like a user. */
+async function pick(scope: Page | Locator, role: 'checkbox' | 'radio', name: string) {
+	const page = 'page' in scope ? scope.page() : scope;
+	// `has` is evaluated relative to each label, so build it from the page, not the scope.
+	await scope
+		.locator('label')
+		.filter({ has: page.getByRole(role, { name, exact: true }) })
+		.click();
+	await expect(scope.getByRole(role, { name, exact: true })).toBeChecked();
+}
+
+async function seedJam(baseURL: string, slug: string) {
+	const now = Date.now();
+	const res = await fetch(`${baseURL}/api/internal/jams/sync`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
+		body: JSON.stringify({
+			jams: [
+				{
+					slug,
+					title: `E2E Test Jam ${slug}`,
+					url: `https://itch.io/jam/${slug}`,
+					hostName: 'Test Host',
+					hostUrl: 'https://test.itch.io/',
+					coverUrl: null,
+					startsAt: new Date(now - 3_600_000).toISOString(),
+					endsAt: new Date(now + 3 * 86_400_000).toISOString(),
+					joinedCount: 42,
+					phase: 'running'
+				}
+			]
+		})
+	});
+	expect(res.status).toBe(200);
+}
+
+async function signInAndOnboard(browser: Browser, username: string, role: string, tz: string) {
+	const context = await browser.newContext();
+	const page = await context.newPage();
+	await go(page, `/auth/dev?user=${username}&next=/jams`);
+	await expect(page).toHaveURL(/\/onboarding/);
+	await expect(page.getByRole('heading', { name: /Welcome/ })).toBeVisible();
+
+	// Step 1: roles + experience
+	await pick(page, 'checkbox', role);
+	await pick(page, 'radio', 'A few jams');
+	await page.getByRole('button', { name: 'Continue' }).click();
+	// Step 2: tools + timezone
+	await page.getByRole('button', { name: '+ Godot' }).click();
+	await page.getByLabel('Timezone').selectOption(tz);
+	await page.getByRole('button', { name: 'Continue' }).click();
+	// Step 3: contact
+	await page.getByLabel('Discord username').fill(`${username}_dc`);
+	await page.getByRole('button', { name: /Finish/ }).click();
+	await expect(page).toHaveURL(/\/jams$/);
+	return page;
+}
+
+test('two jammers find each other and form a team', async ({ browser, baseURL }, testInfo) => {
+	// Unique per project + run: desktop and mobile execute in parallel against the same database.
+	const run = `${testInfo.project.name.slice(0, 1)}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+	const slug = `e2e-${run}`;
+	await seedJam(baseURL!, slug);
+
+	const alice = await signInAndOnboard(browser, `alice${run}`, 'Art', 'Europe/Rome');
+	const bob = await signInAndOnboard(browser, `bob${run}`, 'Programming', 'America/New_York');
+
+	// Bob posts that he's looking for a team.
+	await go(bob, `/jams/${slug}`);
+	await bob.getByRole('button', { name: /I'm looking for a team/ }).click();
+	await bob.getByLabel('Anything teams should know?').fill('Godot dev, free all weekend');
+	await bob.getByRole('button', { name: 'Post', exact: true }).click();
+	await expect(bob.getByText(/You're on the board/)).toBeVisible();
+	await expect(bob.getByText(/listed as/)).toBeVisible();
+
+	// Alice starts a team. She sees Bob in the list.
+	await go(alice, `/jams/${slug}`);
+	await expect(alice.getByText('Godot dev, free all weekend')).toBeVisible();
+	await alice.getByRole('button', { name: 'Start a team' }).click();
+	await alice.getByLabel('Team name').fill('Night Owls');
+	await pick(alice.getByRole('dialog'), 'checkbox', 'Programming');
+	await alice.getByRole('button', { name: 'Create team' }).click();
+	await expect(alice).toHaveURL(/\/teams\/.+\?created=1/);
+	await expect(alice.getByText('Team created!')).toBeVisible();
+	const teamUrl = alice.url().split('?')[0];
+
+	// Bob sees the team (highlighted because it needs Programming) and asks to join.
+	await go(bob, `/jams/${slug}?tab=teams`);
+	await expect(bob.getByText('Night Owls')).toBeVisible();
+	await expect(bob.getByText('Needs programming')).toBeVisible();
+	await bob.getByRole('button', { name: 'Ask to join' }).click();
+	await bob.getByLabel(/Say hi/).fill('Hi! I can do the code.');
+	await bob.getByRole('button', { name: 'Send request' }).click();
+	await expect(bob.getByText(/Request sent/)).toBeVisible();
+	await expect(bob.getByRole('button', { name: /Requested/ })).toBeVisible();
+
+	// Alice gets an inbox badge and accepts from the inbox.
+	await go(alice, '/inbox');
+	await expect(alice.getByRole('link', { name: /Inbox, 1 pending/ })).toBeVisible();
+	await expect(alice.getByText('Hi! I can do the code.')).toBeVisible();
+	await alice.getByRole('button', { name: 'Accept' }).click();
+	await expect(alice.getByText(/Welcome to Night Owls/)).toBeVisible();
+	await expect(alice.getByText("You're all caught up")).toBeVisible();
+
+	// Bob is now a member, his LFG post is gone, and he can see Alice's contact.
+	await go(bob, teamUrl);
+	await expect(bob.getByRole('button', { name: 'Leave team' })).toBeVisible();
+	await expect(bob.getByRole('button', { name: `Discord: alice${run}_dc` })).toBeVisible();
+	await go(bob, `/jams/${slug}`);
+	await expect(bob.getByText(/You're on/)).toBeVisible();
+	await expect(bob.getByText('Nobody is looking yet')).toBeVisible();
+});
+
+test('signed-out visitors can browse and are offered sign-in', async ({ page }) => {
+	await page.goto('/jams');
+	await expect(page.getByRole('heading', { name: 'Find a jam' })).toBeVisible();
+	await page.goto('/');
+	await expect(page.getByRole('link', { name: 'Sign in with itch.io' }).first()).toBeVisible();
+});

@@ -1,0 +1,30 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "jammates",
+	"compatibility_date": "2026-11-09",
+	"compatibility_flags": ["nodejs_als"],
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"workers_dev": true,
+	"preview_urls": true,
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "jammates",
+			// Replace with the id printed by `npx wrangler d1 create jammates` before deploying.
+			"database_id": "00000000-0000-0000-0000-000000000000",
+			"migrations_dir": "drizzle"
+		}
+	],
+	"vars": {
+		// OAuth client id from https://itch.io/user/settings/oauth-apps (public, no secret needed with PKCE).
+		"ITCH_CLIENT_ID": "",
+		// Enables /auth/dev?user=<name> for local testing. Never set this in production.
+		"DEV_AUTH": ""
+	}
+	// Secrets (set with `npx wrangler secret put` in production, `.dev.vars` locally):
+	//   SYNC_SECRET — bearer token used by scripts/sync-jams.ts
+}
