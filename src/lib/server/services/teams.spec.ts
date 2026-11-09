@@ -25,7 +25,8 @@ import {
 	respondToRequest,
 	respondToTeamUp,
 	sendTeamUp,
-	upsertLfgPost
+	upsertLfgPost,
+	transferOwnership
 } from './teams.ts';
 
 // Real (in-memory) D1 via wrangler, with the generated migrations applied.
@@ -365,5 +366,42 @@ describe('unlimited team size', () => {
 		expect(await db.select().from(teamMembers).where(eq(teamMembers.teamId, t.id))).toHaveLength(
 			10
 		);
+	});
+});
+
+describe('ownership transfer', () => {
+	it('cannot leave a nonmember owning the team when transfer races departure', async () => {
+		const owner = await makeUser('owner');
+		const bob = await makeUser('bob');
+		const t = await createTeam(db, jam, owner.id, team('A'));
+		await inviteUser(db, t.id, owner.id, bob.id, '');
+		const req = (await db.query.teamRequests.findFirst({
+			where: eq(teamRequests.userId, bob.id)
+		}))!;
+		await respondToRequest(db, req.id, bob.id, true);
+		await Promise.allSettled([
+			transferOwnership(db, t.id, owner.id, bob.id),
+			leaveTeam(db, t.id, bob.id)
+		]);
+		const current = (await db.query.teams.findFirst({ where: eq(teams.id, t.id) }))!;
+		expect(
+			await db.query.teamMembers.findFirst({
+				where: and(eq(teamMembers.teamId, t.id), eq(teamMembers.userId, current.ownerId))
+			})
+		).toBeDefined();
+	});
+
+	it('rejects nonmembers and a former owner', async () => {
+		const owner = await makeUser('owner');
+		const bob = await makeUser('bob');
+		const t = await createTeam(db, jam, owner.id, team('A'));
+		await expect(transferOwnership(db, t.id, owner.id, bob.id)).rejects.toThrow(ServiceError);
+		await inviteUser(db, t.id, owner.id, bob.id, '');
+		const req = (await db.query.teamRequests.findFirst({
+			where: eq(teamRequests.userId, bob.id)
+		}))!;
+		await respondToRequest(db, req.id, bob.id, true);
+		await transferOwnership(db, t.id, owner.id, bob.id);
+		await expect(transferOwnership(db, t.id, owner.id, owner.id)).rejects.toThrow(ServiceError);
 	});
 });

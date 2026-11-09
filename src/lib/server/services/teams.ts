@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, exists, inArray, ne, or, sql } from 'drizzle-orm';
 import type { Db } from '#lib/server/db/index.ts';
 import {
 	lfgPosts,
@@ -316,7 +316,22 @@ export async function leaveTeam(db: Db, teamId: string, userId: string) {
 	}
 	await db
 		.delete(teamMembers)
-		.where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
+		.where(
+			and(
+				eq(teamMembers.teamId, teamId),
+				eq(teamMembers.userId, userId),
+				exists(
+					db
+						.select({ id: teams.id })
+						.from(teams)
+						.where(and(eq(teams.id, teamId), ne(teams.ownerId, userId)))
+				)
+			)
+		)
+		.returning({ userId: teamMembers.userId });
+	// Ownership may have changed after the initial read; an owner cannot leave members behind.
+	if ((await getTeam(db, teamId))?.ownerId === userId)
+		throw new ServiceError('Hand ownership to someone else before leaving.');
 	return { disbanded: false };
 }
 
@@ -324,9 +339,18 @@ export async function removeMember(db: Db, teamId: string, actorId: string, user
 	const team = await requireOwnedTeam(db, teamId, actorId);
 	if (userId === team.ownerId)
 		throw new ServiceError("You can't remove yourself; disband the team instead.");
-	await db
-		.delete(teamMembers)
-		.where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
+	await db.delete(teamMembers).where(
+		and(
+			eq(teamMembers.teamId, teamId),
+			eq(teamMembers.userId, userId),
+			exists(
+				db
+					.select({ id: teams.id })
+					.from(teams)
+					.where(and(eq(teams.id, teamId), eq(teams.ownerId, actorId), ne(teams.ownerId, userId)))
+			)
+		)
+	);
 }
 
 export async function transferOwnership(
@@ -335,13 +359,27 @@ export async function transferOwnership(
 	actorId: string,
 	newOwnerId: string
 ) {
-	await requireOwnedTeam(db, teamId, actorId);
-	const [member] = await db
-		.select({ userId: teamMembers.userId })
-		.from(teamMembers)
-		.where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, newOwnerId)));
-	if (!member) throw new ServiceError('The new owner must be a member of the team.');
-	await db.update(teams).set({ ownerId: newOwnerId }).where(eq(teams.id, teamId));
+	// Check the actor and recipient in the same statement that changes ownership.
+	const [updated] = await db
+		.update(teams)
+		.set({ ownerId: newOwnerId })
+		.where(
+			and(
+				eq(teams.id, teamId),
+				eq(teams.ownerId, actorId),
+				exists(
+					db
+						.select({ userId: teamMembers.userId })
+						.from(teamMembers)
+						.where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, newOwnerId)))
+				)
+			)
+		)
+		.returning({ id: teams.id });
+	if (!updated)
+		throw new ServiceError(
+			'Only the current owner can transfer ownership to a current team member.'
+		);
 }
 
 export async function disbandTeam(db: Db, teamId: string, actorId: string) {
