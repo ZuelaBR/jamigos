@@ -1,131 +1,188 @@
 # Jamigos
 
-**Find your party. Make your game.** Jamigos helps people find teammates for itch.io game jams. Sign in with itch.io, say what you do, then post on a jam's board or start a team and invite people.
+**Find your party. Make your game.** Jamigos helps people find teammates for itch.io game jams. Sign in with itch.io, post that you're looking for a team, or start a team and invite people.
 
-**Stack:** SvelteKit 3 · Svelte 5 · Tailwind 4 · Drizzle ORM · Cloudflare Workers + D1 (free tier) · GitHub Actions for jam syncing.
+This is an independent fan project, with no official affiliation with itch.io. It's a hobby project, not a business: there are no paid features, and I never plan to charge users. I vibe coded it with Claude and Codex. I can build it myself, but doing everything by hand didn't feel worth the time with those tools available.
+
+The code is public here on GitHub. [Feature requests and bug reports](https://github.com/ZuelaBR/jamigos/issues/new) are welcome, as are pull requests. A project license has not been selected yet.
+
+## What you can do
+
+- Browse ongoing and upcoming jams, or search for a particular jam.
+- Switch a jam board between **All**, **People**, and **Teams**. Discovery shows people looking for a team and teams recruiting members.
+- Filter by role, with additional experience and timezone filters for people, or a skills-match filter for teams.
+- Start a team, invite people, ask to join, or send a team-up request to another solo jammer.
+- Find your owned and joined teams in **My teams**, linked from the homepage and account menu. Teams are grouped into current and past jams.
+- Manage requests and see acceptance updates in your **Inbox**. There is no built-in chat; contact people through Discord or their itch.io profile.
+
+You can belong to **one team per jam**, across as many different jams as you like. There is no app-imposed member limit. Joining a team closes your looking-for-team post and cancels your other pending invites, join requests and team-ups for that jam. Owners can switch recruiting on or off without deleting the team.
+
+When two solo jammers team up, accepting the request creates a team with both people. The sender becomes the owner and can rename it. Inbox acceptance updates are history, not a statement of current membership: an update stays visible if the team is later disbanded. The inbox shows updates from the last 30 days, 20 per page, and marks only the updates on the page you open as read. That display window is not a database deletion policy.
+
+## Data and visibility
+
+The application stores its data in Cloudflare D1. Local development uses a separate database under `.wrangler/`.
+
+| Data stored                                                                                                                              | Visibility in the app                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Public itch.io user ID, username, display name, avatar URL and profile link; bio, roles, tools, experience, timezone and portfolio links | Profile details are public after onboarding.                                |
+| Discord username, if provided                                                                                                            | Visible to signed-in users, not just teammates.                             |
+| Looking-for-team posts, teams, recruiting status, wanted roles and memberships                                                           | Public. **My teams** requires sign-in, but the teams themselves are public. |
+| Invitations, join requests and solo team-up requests, including messages, timestamps and status                                          | Visible to the people involved; team owners manage team requests.           |
+| Acceptance notifications and whether they've been read                                                                                   | Visible to the notification recipient.                                      |
+| Account and activity timestamps, onboarding status, session-token hashes and expiry dates                                                | Internal application data.                                                  |
+| Public jam listings copied from itch.io                                                                                                  | Public.                                                                     |
+
+Jamigos requests only itch.io's `profile:me` permission. It does not collect your itch.io password or email address. The access token is used to fetch your public profile during login and is not saved in the database. A random session token is kept in an HTTP-only cookie; the database stores its hash and expiry. The avatar URL is refreshed from itch.io when you sign in.
+
+These statements describe application data and access controls. They do not describe any infrastructure logs a hosting provider may keep. Public source code does not include the user database or local environment files. Never attach database dumps, real user data or credentials to a public issue or pull request.
 
 ## Local development
 
+Use **Node.js 24**, matching the jam-sync workflow, and npm.
+
 ```sh
-npm install
-cp .dev.vars.example .dev.vars   # DEV_AUTH=1 enables the dev login
-npm run db:migrate:local         # creates the local D1 database in .wrangler/
+npm ci
+cp .dev.vars.example .dev.vars
+npm run db:migrate:local
 npm run dev
 ```
 
-Open http://localhost:5173. Without an itch.io OAuth app, "Sign in" falls back to the dev login. You can also use `/auth/dev?user=alice` directly, which lets you test with several users in different browsers.
+Open [http://localhost:5173](http://localhost:5173). The example environment file sets `DEV_AUTH=1`. With that flag and an empty `ITCH_CLIENT_ID`, Sign in uses a local test account. You can also open `/auth/dev?user=alice` or `/auth/dev?user=bob` in separate browser profiles to test multiple users.
 
-Fill the jam list with real data (this crawls itch.io slowly, about 5 seconds per page):
+The shortcut works only in development with `DEV_AUTH=1`; it is unavailable in a production build. Keep production `DEV_AUTH` empty. The example `SYNC_SECRET` is for local use only; use a new random value for deployment. Keep `.dev.vars`, `.env` and `.wrangler/` out of Git.
+
+To fill your local jam list, leave the dev server running and use a second terminal:
 
 ```sh
-SYNC_PAGES=1 npm run sync:jams   # 1 page each of "in progress" and "upcoming"
+SYNC_PAGES=1 npm run sync:jams
 ```
 
-### Testing
+This fetches one page each of itch.io's in-progress and upcoming listings, with a default five-second delay between requests. The crawler defaults to `http://localhost:5173` and reads `SYNC_SECRET` from `.dev.vars` unless set in its environment. Set `SYNC_URL` if your local server uses another origin.
 
-Unit tests run against an in-memory D1. The Playwright tests start their own dev server on port 5174, with a fresh database in `.wrangler/e2e/` on every run, so they never touch your dev data. That database is filled with **real itch.io jams** from the saved listing pages in `src/lib/jams/fixtures/`, rather than live itch.io, which keeps the tests fast and avoids rate limits. To refresh those pages, re-download `https://itch.io/jams/in-progress` and `https://itch.io/jams/upcoming` into that folder.
+### Tests and checks
 
-### Useful scripts
+```sh
+npx playwright install chromium
+npm run test:unit -- --run
+npx playwright test
+npm run check
+npm run lint
+npm run build
+```
 
-| Command                                | What it does                                                |
-| -------------------------------------- | ----------------------------------------------------------- |
-| `npm run check`                        | Type-check everything                                       |
-| `npm run lint`                         | Prettier + ESLint                                           |
-| `npx vitest run`                       | Unit tests (parsers, timezones, team rules on in-memory D1) |
-| `npx playwright test`                  | End-to-end team flow (desktop + mobile) on a throwaway DB   |
-| `npm run db:generate`                  | Generate a SQL migration after editing `schema.ts`          |
-| `npm run db:migrate:local` / `:remote` | Apply migrations                                            |
-| `npm run sync:jams`                    | Crawl itch.io jam listings and push them to the app         |
+Unit tests use isolated D1 test databases. Playwright starts a server on **port 5174** and recreates only `.wrangler/e2e/` on every run. It seeds that database from saved itch.io listing pages in `src/lib/jams/fixtures/`, so tests do not crawl itch.io or use your regular local database.
+
+Keep `.dev.vars` configured for local development: the browser tests need `DEV_AUTH=1`, and seeding reads `SYNC_SECRET` from that file. The suite covers desktop and mobile Chromium. It uses the local sign-in shortcut, so passing tests do not verify live itch.io OAuth or production infrastructure. See [UX_REVIEW.md](UX_REVIEW.md) for the review scope and remaining verification.
+
+To refresh parser fixtures, save itch.io's [in-progress listing](https://itch.io/jams/in-progress) as `src/lib/jams/fixtures/in-progress.html` and its [upcoming listing](https://itch.io/jams/upcoming) as `src/lib/jams/fixtures/upcoming.html`. Keep the jam slugs used in browser tests available, or update those tests alongside the fixtures.
+
+| Command                      | What it does                                                      |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `npm run check`              | Svelte and TypeScript checks, plus Wrangler type validation       |
+| `npm run lint`               | Prettier and ESLint                                               |
+| `npm run test:unit -- --run` | Run unit tests once (`npm run test:unit` starts watch mode)       |
+| `npx playwright test`        | Run browser tests after installing Chromium                       |
+| `npm test`                   | Run unit tests, install Playwright browsers and run browser tests |
+| `npm run build`              | Build for Cloudflare Workers                                      |
+| `npm run db:generate`        | Generate a migration after changing the database schema           |
+| `npm run db:migrate:local`   | Apply migrations to the local development database                |
+| `npm run db:migrate:remote`  | Apply migrations to the configured remote database                |
+| `npm run sync:jams`          | Fetch itch.io jam listings and send them to the app               |
 
 ## itch.io login (OAuth)
 
-1. Go to https://itch.io/user/settings/oauth-apps and create an app.
-2. Add the redirect URLs `http://localhost:5173/auth/callback` and `https://<your-domain>/auth/callback`.
-3. Put the **client ID** in `ITCH_CLIENT_ID`, in `.dev.vars` locally and in `wrangler.jsonc` → `vars` for production. You don't need a client secret, because the login uses PKCE.
+1. Create an app in [itch.io OAuth settings](https://itch.io/user/settings/oauth-apps).
+2. Register `http://localhost:5173/auth/callback` and your deployed origin followed by `/auth/callback`. If you use `127.0.0.1` locally, register that host too and use it consistently.
+3. Set `ITCH_CLIENT_ID` in `.dev.vars` for local use and in `wrangler.jsonc` under `vars` for production.
 
-We request only the `profile:me` scope. The access token is used once to read the profile and is never stored.
+The implementation uses the [authorization code flow with PKCE](https://itch.io/docs/api/oauth#authorization-code-flow-recommended), which does not require a client secret. The callback origin must match the address used to open the app. Before launch, test a complete login and logout with a real itch.io account; the automated tests use development authentication.
 
-## Deploying to Cloudflare (free)
+## Deploying to Cloudflare
 
-Follow these steps in order. The scheduled jam sync is the **last** step, because it needs the deployed app.
+The app targets Cloudflare Workers and D1. Using a free tier depends on your account and usage; this README does not guarantee hosting costs.
 
-1. **Create the database and deploy:**
+1. Sign in and create the database:
 
    ```sh
    npx wrangler login
-   npx wrangler d1 create jamigos          # copy the database_id into wrangler.jsonc
-   npx wrangler secret put SYNC_SECRET      # any long random string; keep it for step 3
-   # set vars.ITCH_CLIENT_ID in wrangler.jsonc (see "itch.io login" above), then:
-   npm run deploy                           # build + remote migrations + wrangler deploy
+   npx wrangler d1 create jamigos
    ```
 
-2. **Check the site** at the URL wrangler printed, for example `https://jamigos.<you>.workers.dev`.
-3. **Give GitHub what the sync needs**, using the same `SYNC_SECRET` value as in step 1:
+2. Copy the returned database ID into `wrangler.jsonc`. Set `vars.ITCH_CLIENT_ID` and leave `vars.DEV_AUTH` empty. Set a fresh, random sync secret through Wrangler's prompt:
 
    ```sh
-   gh variable set SYNC_URL --body https://jamigos.<you>.workers.dev
-   gh secret set SYNC_SECRET
+   npx wrangler secret put SYNC_SECRET
    ```
 
-4. **Turn on the scheduled sync**, then start a first run straight away:
+3. Deploy:
 
    ```sh
-   npm run sync:enable   # checks steps 1–3 first and refuses if anything is missing
-   npm run sync:run
+   npm run deploy
    ```
+
+   This builds the app, applies **remote** migrations, then deploys the Worker. Review generated migrations before running it.
+
+4. Open the deployed URL, register its OAuth callback, and verify sign-in. Configure jam syncing only after the app works.
 
 ### Scheduled jam sync
 
-> **Status: disabled until the app is deployed.** Without a deployed app, every run would fail and GitHub would email you every 6 hours. Check the current state at any time with `npm run sync:status`.
+The workflow in [`.github/workflows/sync-jams.yml`](.github/workflows/sync-jams.yml) declares a run every six hours and supports manual runs. Whether it is enabled is a GitHub setting, not something this README can guarantee. Check it with `npm run sync:status`; keep it disabled until the deployed app and sync settings are ready.
 
-`.github/workflows/sync-jams.yml` crawls itch.io's jam listings every 6 hours and pushes them to the app. It needs two things in the GitHub repository:
+The management commands require the GitHub CLI, authenticated with access to this repository. Run them from this checkout. For a fork, configure the fork's own secrets, variables and deployment.
 
-| Name          | Kind                 | Value                                                       |
-| ------------- | -------------------- | ----------------------------------------------------------- |
-| `SYNC_URL`    | Actions **variable** | your deployed app, e.g. `https://jamigos.<you>.workers.dev` |
-| `SYNC_SECRET` | Actions **secret**   | the same value as the Worker secret `SYNC_SECRET`           |
+Set the deployed base URL as an Actions **variable**, and the same random secret used by the Worker as an Actions **secret**. Replace the example URL below:
 
-Manage it with these commands (they need the GitHub CLI, signed in with `gh auth login`):
+```sh
+gh variable set SYNC_URL --body "https://YOUR_WORKER.YOUR_SUBDOMAIN.workers.dev"
+gh secret set SYNC_SECRET
+npm run sync:check
+npm run sync:enable
+npm run sync:run
+```
 
-| Command                | What it does                                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `npm run sync:status`  | Shows whether the schedule is on, whether both settings exist, and the recent runs                           |
-| `npm run sync:check`   | Verifies the variable, the secret, that the app responds, and that its sync endpoint exists; changes nothing |
-| `npm run sync:enable`  | Runs the same checks, then turns the schedule on. It refuses if anything is missing                          |
-| `npm run sync:disable` | Turns the schedule off (for example while you migrate or debug)                                              |
-| `npm run sync:run`     | Triggers one sync now (the schedule must be on); follow it with `gh run watch`                               |
+`gh secret set` prompts for the value, so you do not need to put the secret in shell history. Never put it in `wrangler.jsonc`, a GitHub variable, an issue or a commit.
 
-If someone turns the workflow on from GitHub's Actions tab before it's configured, its first step stops with a clear "Jam sync is not configured" error rather than a confusing crawler failure.
+| Command                | What it does                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `npm run sync:status`  | Show workflow state, configuration presence and recent runs                                              |
+| `npm run sync:check`   | Check settings exist, the app responds and the endpoint rejects unauthenticated requests; change nothing |
+| `npm run sync:enable`  | Run those checks, then enable the workflow                                                               |
+| `npm run sync:disable` | Disable the workflow                                                                                     |
+| `npm run sync:run`     | Trigger a manual run; this script requires the workflow to be enabled                                    |
 
-The crawler runs in GitHub Actions, not in a Worker, because itch.io rate-limits aggressively. Polite crawling needs long waits between requests, and parsing needs more CPU than a free Worker gets. If itch.io changes its markup, the job **fails loudly** (it reports 0 jams parsed), so GitHub emails you. To update the parser, refresh the fixtures in `src/lib/jams/fixtures/` and run the tests.
+The readiness check does **not** prove that the Worker and GitHub secrets match. After enabling, check the first run with `gh run watch`. If the settings are missing, the workflow fails at its configuration step. GitHub failure emails depend on your notification settings.
 
-## Brand
+The crawler runs in GitHub Actions, outside the request-handling Worker, so it can wait between requests and retry rate limits. If a successful listing response parses to zero jams, the job fails; inspect the response, refresh the fixtures and run the parser tests before changing the parser.
 
-Logos, icons and social images come from the Jamigos brand kit. The site uses the subset in `static/brand/`, served at `/brand/...`:
+## Contributing
 
-- `favicons/`: tab icons, the Apple touch icon, maskable app icons and `site.webmanifest`, linked from `src/app.html`
-- `logos/jamigos-horizontal-{light,dark}.svg`: the header logo (180px wide; on small screens the header shows just the team mark)
-- `icons/jamigos-team-{light,dark}.svg`: the team mark, also used on the home page
-- `social/jamigos-open-graph-light.png`: the 1200×630 link-preview image (`og:image`)
+[Open an issue](https://github.com/ZuelaBR/jamigos/issues/new) for a feature request or bug. Describe what you were trying to do, what happened and what you expected. For UI bugs, include the viewport size or device and a screenshot with personal information removed.
 
-Light/dark artwork is switched in CSS with the `only-light` / `only-dark` classes, which follow the theme switcher as well as the OS. Brand colours: coral `#FA5C5C` (buttons, with charcoal `#222` text as the kit specifies), ink `#222`. The name, tagline and theme colour are in `src/lib/config.ts`.
+For a pull request, keep the change focused, explain the resulting behavior and include the checks you ran. Run formatting, lint and type checks; run the relevant unit or browser tests for behavior changes. Use synthetic accounts and local test data. Do not include credentials, database exports or screenshots with real contact details.
 
 ## How it's organised
 
+```text
+src/lib/jams/parse.ts        itch.io HTML parsers, tested against saved fixtures
+src/lib/server/db/schema.ts users, sessions, jams, teams, memberships, posts, requests,
+                            solo team-ups and notifications
+src/lib/server/auth/        OAuth, hashed-session storage and itch.io profile updates
+src/lib/server/services/    Business rules, board filters, home totals and My teams
+src/lib/components/         Shared cards, forms, menus, dialogs and feedback
+src/routes/jams/[slug]/     Jam board: All, People and Teams
+src/routes/teams/           My teams and individual team management pages
+src/routes/inbox/           Requests and acceptance history
+scripts/sync-jams.ts        Crawler used locally and by GitHub Actions
 ```
-src/lib/jams/parse.ts            itch.io HTML parsers (pure, fixture-tested)
-src/lib/server/db/schema.ts      tables: users, sessions, jams, teams, team_members, lfg_posts, team_requests
-src/lib/server/auth/             PKCE OAuth, sessions (hashed tokens), user upsert
-src/lib/server/services/         business rules (teams.ts holds the invite/request/join logic)
-src/routes/jams/[slug]/          the main board: players looking + teams recruiting
-src/routes/teams/[id]/           team page with members' contact info and owner tools
-scripts/sync-jams.ts             crawler used by the GitHub Action
-```
 
-Key rules: each user can be on **one team per jam** (enforced by a unique index). When someone joins a team, their LFG post closes and their other pending requests for that jam are cancelled. Contact details are visible only to signed-in users.
+## Brand
 
-Two solo jammers can also **team up** without either of them starting a team first. One sends a team-up request; when the other accepts, a team named after both of them (for example "Mika & Devon") is created with both as members, and the sender is the owner who can rename it. Joining any team cancels your other pending invites, join requests and team-ups for that jam.
+Assets live in `static/brand/`, served at `/brand/`:
 
-When someone accepts something you sent (a team-up, a join request or an invite), you get an update in your **Inbox**. Unread updates count towards the Inbox badge, and opening the Inbox marks them as read.
+- `favicons/`: browser icons, Apple touch icon and web app manifest, linked from `src/app.html`
+- `logos/jamigos-horizontal-{light,dark}.svg`: header logo
+- `icons/jamigos-team-{light,dark}.svg`: the team mark shown on mobile and the homepage
+- `social/jamigos-open-graph-light.png`: the 1200×630 link-preview image
 
-Jamigos is a fan project and is not affiliated with itch.io.
+The `only-light` and `only-dark` CSS classes follow the selected theme, including the system setting. Brand colours are coral `#FA5C5C` and ink `#222`; buttons use ink text on coral. App name, tagline, repository links and theme colour are defined in `src/lib/config.ts`.
