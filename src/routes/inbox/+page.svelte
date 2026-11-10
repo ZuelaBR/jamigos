@@ -21,10 +21,10 @@
 
 	{#if data.updates.length}
 		<h2 class="mt-8 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">Updates</h2>
-		<ul class="divide-y divide-border card">
+		<ul class="card divide-y divide-border overflow-hidden">
 			{#each data.updates as u (u.id)}
 				{@const who = u.actor.displayName || u.actor.username}
-				<li class="flex items-center gap-3 px-4 py-3 {u.isNew ? 'bg-ok/5' : ''}">
+				<li class="flex flex-wrap items-center gap-3 p-4 {u.isNew ? 'bg-ok/5' : ''}">
 					<span class="relative shrink-0">
 						<a href="/u/{u.actor.username}"><Avatar user={u.actor} size={36} /></a>
 						<span
@@ -36,7 +36,7 @@
 						<p>
 							<a href="/u/{u.actor.username}" class="font-semibold hover:text-accent">{who}</a>
 							{#if u.kind === 'teamup_accepted'}
-								accepted your team-up. You're now on <strong>{u.teamName}</strong>!
+								accepted your team-up and formed <strong>{u.teamName}</strong> with you.
 							{:else if u.kind === 'request_accepted'}
 								accepted your request to join <strong>{u.teamName}</strong>!
 							{:else}
@@ -80,7 +80,7 @@
 	{#if data.incoming.length || data.teamUpsIn.length}
 		<ul class="space-y-3">
 			{#each data.teamUpsIn as t (t.id)}
-				<li class="flex flex-col gap-3 card p-4 sm:flex-row sm:items-center">
+				<li class="flex card flex-col gap-3 p-4 sm:flex-row sm:items-center">
 					<div class="flex min-w-0 flex-1 items-start gap-3">
 						<a href="/u/{t.other.username}"><Avatar user={t.other} size={40} /></a>
 						<div class="min-w-0">
@@ -105,7 +105,7 @@
 					<form
 						method="POST"
 						action="?/respondTeamUp"
-						class="flex gap-2"
+						class="flex shrink-0 flex-wrap items-center gap-2"
 						use:enhance={withToasts()}
 					>
 						<input type="hidden" name="teamUpId" value={t.id} />
@@ -115,7 +115,7 @@
 				</li>
 			{/each}
 			{#each data.incoming as item (item.id)}
-				<li class="flex flex-col gap-3 card p-4 sm:flex-row sm:items-center">
+				<li class="flex card flex-col gap-3 p-4 sm:flex-row sm:items-center">
 					<div class="flex min-w-0 flex-1 items-start gap-3">
 						{#if item.kind === 'request'}
 							<a href="/u/{item.user.username}"><Avatar user={item.user} size={40} /></a>
@@ -153,7 +153,12 @@
 					{#if item.message}<p class="rounded-lg bg-surface-2 p-2 text-sm sm:max-w-56">
 							"{item.message}"
 						</p>{/if}
-					<form method="POST" action="?/respond" class="flex gap-2" use:enhance={withToasts()}>
+					<form
+						method="POST"
+						action="?/respond"
+						class="flex shrink-0 flex-wrap items-center gap-2"
+						use:enhance={withToasts()}
+					>
 						<input type="hidden" name="requestId" value={item.id} />
 						<button class="btn-primary btn-sm" name="accept" value="1">Accept</button>
 						<button class="btn-ghost btn-sm" name="accept" value="0">Decline</button>
@@ -172,10 +177,10 @@
 
 	{#if data.outgoing.length || data.teamUpsOut.length}
 		<h2 class="mt-10 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">Sent by you</h2>
-		<ul class="divide-y divide-border card">
+		<ul class="card divide-y divide-border overflow-hidden">
 			{#each data.teamUpsOut as t (t.id)}
-				<li class="flex items-center gap-3 px-4 py-3 text-sm">
-					<span class="flex-1">
+				<li class="flex flex-wrap items-center gap-3 p-4 text-sm">
+					<span class="min-w-0 flex-1">
 						Asked <a href="/u/{t.other.username}" class="font-medium hover:text-accent"
 							>{t.other.displayName || t.other.username}</a
 						>
@@ -189,8 +194,8 @@
 				</li>
 			{/each}
 			{#each data.outgoing as item (item.id)}
-				<li class="flex items-center gap-3 px-4 py-3 text-sm">
-					<span class="flex-1">
+				<li class="flex flex-wrap items-center gap-3 p-4 text-sm">
+					<span class="min-w-0 flex-1">
 						{#if item.kind === 'request'}
 							Asked to join <a href="/teams/{item.team.id}" class="font-medium hover:text-accent"
 								>{item.team.name}</a
