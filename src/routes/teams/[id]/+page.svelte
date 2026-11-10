@@ -4,6 +4,7 @@
 	import Mail from '@lucide/svelte/icons/mail';
 	import PartyPopper from '@lucide/svelte/icons/party-popper';
 	import { enhance } from '$app/forms';
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import Modal from '#lib/components/Modal.svelte';
@@ -13,7 +14,7 @@
 	import { withToasts } from '#lib/forms.ts';
 	import { EXPERIENCE_LABELS, type Role } from '#lib/profile.ts';
 	import { relativeTime } from '#lib/time.ts';
-	import { toast } from '#lib/toast.svelte.ts';
+	import { copyToClipboard as copy } from '#lib/clipboard.ts';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -30,16 +31,17 @@
 	const loginHref = $derived(`/login?next=${encodeURIComponent(page.url.pathname)}`);
 	const errors = $derived(form && 'errors' in form ? (form.errors as Record<string, string>) : {});
 
+	// Keep JavaScript actions disabled until their handlers and dialogs are ready.
+	let interactive = $state(false);
+	onMount(() => (interactive = true));
 	let editOpen = $state(false);
 	let joinOpen = $state(false);
 	let pending = $state(false);
 	const setPending = (v: boolean) => (pending = v);
-	// svelte-ignore state_referenced_locally
-	let editRoles = $state<Role[]>([...data.team.openRoles]);
-
-	async function copy(text: string) {
-		await navigator.clipboard.writeText(text);
-		toast('Copied to clipboard.');
+	let editRoles = $state<Role[]>([]);
+	function openEditor() {
+		editRoles = [...team.openRoles];
+		editOpen = true;
 	}
 
 	// Destructive actions all go through one confirmation dialog (never the browser's confirm()).
@@ -88,7 +90,9 @@
 			{/if}
 		</p>
 		{#if data.isOwner}
-			<button class="btn-primary btn-sm" onclick={() => (editOpen = true)}>Rename team</button>
+			<button class="btn-primary btn-sm" disabled={!interactive} onclick={openEditor}
+				>Rename team</button
+			>
 		{/if}
 	</div>
 {:else if justCreated && data.isOwner}
@@ -98,7 +102,7 @@
 			class="mr-1.5 inline-block align-[-3px] text-ok"
 			aria-hidden="true"
 		/><strong>Team created!</strong> Next step: go to the
-		<a class="text-accent underline" href="/jams/{data.jam.slug}">"Looking for a team" list</a> and invite
+		<a class="text-accent underline" href="/jams/{data.jam.slug}?tab=players">People list</a> and invite
 		people, or share this page.
 	</div>
 {:else if justJoined && data.isMember}
@@ -111,9 +115,9 @@
 	</div>
 {/if}
 
-<div class="mt-4 grid gap-6 lg:grid-cols-[1fr_320px]">
-	<section class="space-y-6">
-		<div class="card p-5 sm:p-6">
+<div class="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+	<section class="min-w-0 space-y-6">
+		<div class="card card-panel">
 			<div class="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h1 class="text-2xl font-bold">{team.name}</h1>
@@ -126,11 +130,15 @@
 					</p>
 				</div>
 				<div class="flex gap-2">
-					<button class="btn-ghost btn-sm" onclick={() => copy(page.url.origin + page.url.pathname)}
-						>Share link</button
+					<button
+						class="btn-ghost btn-sm"
+						disabled={!interactive}
+						onclick={() => copy(page.url.origin + page.url.pathname)}>Share link</button
 					>
-					{#if data.isOwner}<button class="btn-ghost btn-sm" onclick={() => (editOpen = true)}
-							>Edit team</button
+					{#if data.isOwner}<button
+							class="btn-ghost btn-sm"
+							disabled={!interactive}
+							onclick={openEditor}>Edit team</button
 						>{/if}
 				</div>
 			</div>
@@ -145,11 +153,13 @@
 				</p>{/if}
 		</div>
 
-		<div class="divide-y divide-border card">
+		<div class="card divide-y divide-border">
 			<h2 class="px-5 py-3 font-semibold">Members</h2>
 			{#each data.members as m (m.id)}
 				<div class="flex flex-wrap items-center gap-3 px-5 py-3">
-					<a href="/u/{m.username}"><Avatar user={m} size={40} /></a>
+					<a href="/u/{m.username}" aria-label="View {m.displayName || m.username}'s profile"
+						><Avatar user={m} size={40} /></a
+					>
 					<div class="min-w-0 flex-1">
 						<a href="/u/{m.username}" class="font-medium hover:text-accent"
 							>{m.displayName || m.username}</a
@@ -173,9 +183,11 @@
 					<div class="flex w-full flex-wrap items-center gap-2 pl-[52px] text-sm sm:w-auto sm:pl-0">
 						{#if m.contactDiscord}
 							<button
-								class="btn-ghost btn-sm"
-								title="Copy Discord username"
-								onclick={() => copy(m.contactDiscord!)}>Discord: {m.contactDiscord}</button
+								class="btn-ghost btn-sm min-w-0"
+								title="Copy Discord username: {m.contactDiscord}"
+								disabled={!interactive}
+								onclick={() => copy(m.contactDiscord!)}
+								><span class="min-w-0 truncate">Discord: {m.contactDiscord}</span></button
 							>
 						{/if}
 						<a class="btn-ghost btn-sm" href={m.itchUrl} target="_blank" rel="noopener">itch.io ↗</a
@@ -184,11 +196,13 @@
 							<button
 								type="button"
 								class="btn-ghost btn-sm"
+								disabled={!interactive}
 								onclick={() => (confirming = { kind: 'transfer', user: m })}>Make owner</button
 							>
 							<button
 								type="button"
 								class="btn-danger-outline btn-sm"
+								disabled={!interactive}
 								onclick={() => (confirming = { kind: 'remove', user: m })}>Remove</button
 							>
 						{/if}
@@ -228,7 +242,7 @@
 							<button
 								type="button"
 								class="btn-danger-outline btn-sm"
-								disabled={data.isOwner}
+								disabled={!interactive || data.isOwner}
 								onclick={() => (confirming = { kind: 'leave' })}>Leave team…</button
 							>
 						</div>
@@ -246,6 +260,7 @@
 							<button
 								type="button"
 								class="btn-danger-outline btn-sm"
+								disabled={!interactive}
 								onclick={() => (confirming = { kind: 'disband' })}>Disband team…</button
 							>
 						</div>
@@ -257,7 +272,7 @@
 
 	<aside class="space-y-4">
 		<!-- Viewer actions -->
-		<div class="card p-5">
+		<div class="card card-panel">
 			{#if !me}
 				<p class="text-sm">Want to join this team?</p>
 				<a href={loginHref} class="mt-3 btn-primary w-full">Sign in with itch.io</a>
@@ -299,14 +314,16 @@
 					<button class="btn-ghost w-full">Withdraw request</button>
 				</form>
 			{:else if team.status === 'open'}
-				<button class="btn-primary w-full" onclick={() => (joinOpen = true)}>Ask to join</button>
+				<button class="btn-primary w-full" disabled={!interactive} onclick={() => (joinOpen = true)}
+					>Ask to join</button
+				>
 			{:else}
 				<p class="text-sm text-muted">This team isn't recruiting right now.</p>
 			{/if}
 		</div>
 
 		{#if data.isOwner}
-			<div class="card p-5">
+			<div class="card card-panel">
 				<h2 class="mb-3 font-semibold">
 					Join requests {#if requests.length}<span class="text-accent">({requests.length})</span
 						>{/if}
@@ -349,7 +366,7 @@
 			</div>
 
 			{#if invites.length}
-				<div class="card p-5">
+				<div class="card card-panel">
 					<h2 class="mb-3 font-semibold">Invites sent</h2>
 					<ul class="space-y-2">
 						{#each invites as inv (inv.id)}
@@ -393,52 +410,69 @@
 
 {#if data.isOwner}
 	<Modal bind:open={editOpen} title="Edit team">
-		<form
-			method="POST"
-			action="?/update"
-			class="space-y-4"
-			use:enhance={withToasts({ pending: setPending, onSuccess: () => (editOpen = false) })}
-		>
-			<div>
-				<label class="label" for="team-name">Team name</label>
-				<input
-					id="team-name"
-					name="name"
-					required
-					minlength="2"
-					maxlength="60"
-					class="w-full"
-					value={team.name}
-				/>
-				{#if errors.name}<p class="field-error">{errors.name}</p>{/if}
-			</div>
-			<div>
-				<span class="label">Looking for</span>
-				<RolePicker name="openRoles" bind:selected={editRoles} />
-			</div>
-			<div>
-				<label class="label" for="team-desc">Pitch</label>
-				<textarea id="team-desc" name="description" rows="3" maxlength="500" class="w-full"
-					>{team.description}</textarea
-				>
-			</div>
-			<fieldset>
-				<legend class="label">Status</legend>
-				<div class="flex gap-4 text-sm">
-					<label class="flex items-center gap-2"
-						><input type="radio" name="status" value="open" checked={team.status === 'open'} /> Recruiting</label
-					>
-					<label class="flex items-center gap-2"
-						><input type="radio" name="status" value="full" checked={team.status === 'full'} /> Team is
-						full</label
+		{#if editOpen}
+			<form
+				method="POST"
+				action="?/update"
+				class="space-y-4"
+				use:enhance={withToasts({
+					pending: setPending,
+					onSuccess: () => (editOpen = false),
+					reset: false
+				})}
+			>
+				<div>
+					<label class="label" for="team-name">Team name</label>
+					<input
+						id="team-name"
+						name="name"
+						required
+						minlength="2"
+						maxlength="60"
+						class="w-full"
+						value={team.name}
+					/>
+					{#if errors.name}<p class="field-error">{errors.name}</p>{/if}
+				</div>
+				<div>
+					<span class="label">Looking for</span>
+					<RolePicker name="openRoles" bind:selected={editRoles} />
+				</div>
+				<div>
+					<label class="label" for="team-desc">Pitch</label>
+					<textarea id="team-desc" name="description" rows="3" maxlength="500" class="w-full"
+						>{team.description}</textarea
 					>
 				</div>
-			</fieldset>
-			<div class="flex justify-end gap-2">
-				<button type="button" class="btn-ghost" onclick={() => (editOpen = false)}>Cancel</button>
-				<button class="btn-primary" disabled={pending}>Save</button>
-			</div>
-		</form>
+				<fieldset>
+					<legend class="label">Status</legend>
+					<div class="flex flex-wrap gap-2 text-sm">
+						<label class="choice"
+							><input
+								type="radio"
+								class="sr-only"
+								name="status"
+								value="open"
+								checked={team.status === 'open'}
+							/> Recruiting</label
+						>
+						<label class="choice"
+							><input
+								type="radio"
+								class="sr-only"
+								name="status"
+								value="full"
+								checked={team.status === 'full'}
+							/> Not recruiting</label
+						>
+					</div>
+				</fieldset>
+				<div class="flex justify-end gap-2">
+					<button type="button" class="btn-ghost" onclick={() => (editOpen = false)}>Cancel</button>
+					<button class="btn-primary" disabled={pending}>Save</button>
+				</div>
+			</form>
+		{/if}
 	</Modal>
 {/if}
 
