@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { goto, replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { toast } from '#lib/toast.svelte.ts';
 	import { page } from '$app/state';
@@ -12,6 +12,8 @@
 	import PartyPopper from '@lucide/svelte/icons/party-popper';
 	import UserRoundSearch from '@lucide/svelte/icons/user-round-search';
 	import Users from '@lucide/svelte/icons/users';
+	import CircleHelp from '@lucide/svelte/icons/circle-help';
+	import LayoutGrid from '@lucide/svelte/icons/layout-grid';
 	import ContactButton from '#lib/components/ContactButton.svelte';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import Modal from '#lib/components/Modal.svelte';
@@ -35,56 +37,85 @@
 
 	// ---- Filters (kept in the URL so filtered views can be shared) ----
 	const params = $derived(page.url.searchParams);
-	// Open on what the viewer most likely needs: someone looking for a team wants to see teams
-	// that are recruiting; team owners and visitors want to see people. An explicit ?tab= wins.
-	const defaultTab = $derived(
-		data.me && !viewer?.myTeamId && board.teams.some((t) => t.status === 'open')
-			? 'teams'
-			: 'players'
-	);
+	// Show both kinds of opportunity by default. Keep existing People/Teams links working.
 	const tab = $derived.by(() => {
 		const t = params.get('tab');
-		return t === 'teams' || t === 'players' ? t : defaultTab;
+		return t === 'teams' || t === 'players' ? t : t === 'people' ? 'players' : 'all';
 	});
 	const roleFilter = $derived(
 		ROLES.includes(params.get('role') as Role) ? (params.get('role') as Role) : null
 	);
 	const expFilter = $derived(params.get('exp'));
 	const overlapOnly = $derived(params.get('overlap') === '1');
+	let overlapHelpOpen = $state(false);
+	let overlapHelp: HTMLDivElement | undefined = $state();
+	const uid = $props.id();
+	const overlapHelpId = `${uid}-overlap-help`;
+	const overlapDefinition =
+		'Shows people with roughly 5 or more waking hours in common with you each day. We estimate this using 9am to midnight in both timezones. Actual availability may differ.';
 	const fitOnly = $derived(params.get('fit') === '1');
+	// Compose rapid changes against the latest requested query while navigation loads.
+	let pendingQuery: string | null = null;
+	let filterNavigation = 0;
+	function navigateFilters(next: URLSearchParams) {
+		const query = next.toString();
+		pendingQuery = query;
+		const navigation = ++filterNavigation;
+		void goto(`${page.url.pathname}${query ? `?${query}` : ''}`, {
+			replace: true,
+			reset: false
+		}).finally(() => {
+			if (navigation === filterNavigation) pendingQuery = null;
+		});
+	}
 
 	function setParam(key: string, value: string | null) {
 		// Throwaway copy used to build a URL, not reactive state.
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity
-		const next = new URLSearchParams(page.url.search);
+		const next = new URLSearchParams(pendingQuery ?? page.url.search);
 		if (value) next.set(key, value);
 		else next.delete(key);
-		const qs = next.toString();
-		goto(`${page.url.pathname}${qs ? `?${qs}` : ''}`, { replace: true, reset: false });
+		navigateFilters(next);
+	}
+	function setView(view: 'all' | 'players' | 'teams') {
+		// Keep the shared role filter; drop filters that do not apply to the new view.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const next = new URLSearchParams(pendingQuery ?? page.url.search);
+		if (view === 'all') next.delete('tab');
+		else next.set('tab', view);
+		if (view !== 'players') {
+			next.delete('exp');
+			next.delete('overlap');
+		}
+		if (view !== 'teams') next.delete('fit');
+		overlapHelpOpen = false;
+		navigateFilters(next);
 	}
 
 	const myOffset = $derived(data.me ? offsetMinutes(data.me.timezone) : null);
 	const overlapsWell = (tz: string) =>
 		myOffset === null || overlapHours(offsetMinutes(tz), myOffset) >= 5;
+	const otherPosts = $derived(board.posts.filter((post) => post.user.id !== data.me?.id));
 
 	const players = $derived(
-		board.posts.filter(
+		otherPosts.filter(
 			(p) =>
-				p.user.id !== data.me?.id &&
 				(!roleFilter || p.roles.includes(roleFilter)) &&
-				(!expFilter || p.user.experience === expFilter) &&
-				(!overlapOnly || overlapsWell(p.user.timezone))
+				(tab !== 'players' || !expFilter || p.user.experience === expFilter) &&
+				(tab !== 'players' || !overlapOnly || overlapsWell(p.user.timezone))
 		)
 	);
 
 	const fitsMe = (roles: Role[]) => !!data.me && roles.some((r) => data.me!.roles.includes(r));
+	const recruitingTeams = $derived(
+		board.teams.filter((team) => team.status === 'open' && team.id !== viewer?.myTeamId)
+	);
 	const teamsShown = $derived(
-		board.teams
+		recruitingTeams
 			.filter(
 				(t) =>
-					t.id !== viewer?.myTeamId &&
 					(!roleFilter || t.openRoles.includes(roleFilter)) &&
-					(!fitOnly || fitsMe(t.openRoles))
+					(tab !== 'teams' || !fitOnly || fitsMe(t.openRoles))
 			)
 			// Open teams that need what I can do first.
 			.toSorted(
@@ -92,6 +123,39 @@
 					Number(b.status === 'open') - Number(a.status === 'open') ||
 					Number(fitsMe(b.openRoles)) - Number(fitsMe(a.openRoles))
 			)
+	);
+	const views = $derived([
+		{
+			id: 'all' as const,
+			label: 'All',
+			icon: LayoutGrid,
+			count: players.length + teamsShown.length
+		},
+		{ id: 'players' as const, label: 'People', icon: UserRoundSearch, count: players.length },
+		{ id: 'teams' as const, label: 'Teams', icon: Users, count: teamsShown.length }
+	]);
+	const results = $derived.by(() => {
+		const people = players.map((post) => ({
+			kind: 'person' as const,
+			id: post.id,
+			post,
+			time: post.updatedAt.getTime()
+		}));
+		const teams = teamsShown.map((team) => ({
+			kind: 'team' as const,
+			id: team.id,
+			team,
+			time: team.createdAt.getTime()
+		}));
+		if (tab === 'players') return people;
+		if (tab === 'teams') return teams;
+		return [...people, ...teams].toSorted((a, b) => b.time - a.time);
+	});
+	const peopleSummary = $derived(
+		`${players.length} ${players.length === 1 ? 'person' : 'people'} looking for a team`
+	);
+	const teamsSummary = $derived(
+		`${teamsShown.length} ${teamsShown.length === 1 ? 'team' : 'teams'} recruiting`
 	);
 
 	// Confirmation after leaving or disbanding a team (the team page redirects here).
@@ -106,7 +170,7 @@
 		const url = new URL(page.url.href);
 		url.searchParams.delete('left');
 		url.searchParams.delete('disbanded');
-		replaceState(url, {});
+		void goto(url, { state: {}, shallow: true, replace: true, reset: false });
 	});
 
 	// ---- Modals ----
@@ -139,10 +203,19 @@
 		u.displayName || u.username;
 </script>
 
+<svelte:window
+	onclick={(event) => {
+		if (!overlapHelp?.contains(event.target as Node)) overlapHelpOpen = false;
+	}}
+	onkeydown={(event) => {
+		if (event.key === 'Escape') overlapHelpOpen = false;
+	}}
+/>
+
 <svelte:head><title>{jam.title} · Find teammates · Jamigos</title></svelte:head>
 
 <!-- Jam header -->
-<section class="overflow-hidden card">
+<section class="card overflow-hidden">
 	<div class="flex items-start gap-3 p-4 sm:items-center sm:gap-4 sm:p-6">
 		{#if jam.coverUrl}
 			<img
@@ -196,7 +269,9 @@
 						>{myTeam.name}</a
 					> for this jam.
 				</p>
-				<a href="/teams/{myTeam.id}" class="btn-ghost btn-sm">Manage team</a>
+				<a href="/teams/{myTeam.id}" class="btn-ghost btn-sm"
+					>{viewer?.isOwner ? 'Manage team' : 'View team'}</a
+				>
 			</div>
 		{:else}
 			<div class="flex flex-wrap items-center justify-between gap-3">
@@ -277,31 +352,44 @@
 
 <!-- Tabs + filters -->
 <div class="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
-	<div class="flex rounded-lg border border-border p-1" role="tablist">
-		<button
-			role="tab"
-			aria-selected={tab === 'players'}
-			onclick={() => setParam('tab', defaultTab === 'players' ? null : 'players')}
-			class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium {tab ===
-			'players'
-				? 'bg-surface-2'
-				: 'text-muted hover:text-text'}"
-		>
-			<UserRoundSearch size={15} aria-hidden="true" />Looking for a team
-			<span class="text-muted">{board.posts.length}</span>
-		</button>
-		<button
-			role="tab"
-			aria-selected={tab === 'teams'}
-			onclick={() => setParam('tab', defaultTab === 'teams' ? null : 'teams')}
-			class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium {tab ===
-			'teams'
-				? 'bg-surface-2'
-				: 'text-muted hover:text-text'}"
-		>
-			<Users size={15} aria-hidden="true" />Teams
-			<span class="text-muted">{board.teams.length}</span>
-		</button>
+	<div
+		class="flex rounded-lg border border-border p-1"
+		role="tablist"
+		tabindex="-1"
+		aria-label="Find teammates"
+		onkeydown={(e) => {
+			if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+			const tabs = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+			const current = tabs.indexOf(document.activeElement as HTMLButtonElement);
+			const next =
+				e.key === 'Home'
+					? 0
+					: e.key === 'End'
+						? tabs.length - 1
+						: (current + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+			e.preventDefault();
+			tabs[next]?.focus();
+			tabs[next]?.click();
+		}}
+	>
+		{#each views as view (view.id)}
+			{@const Icon = view.icon}
+			<button
+				id="board-tab-{view.id}"
+				role="tab"
+				aria-controls="board-results"
+				tabindex={tab === view.id ? 0 : -1}
+				aria-selected={tab === view.id}
+				onclick={() => setView(view.id)}
+				class="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-bold whitespace-nowrap sm:px-3 {tab ===
+				view.id
+					? 'bg-surface-2 text-text'
+					: 'text-muted hover:text-text'}"
+			>
+				<Icon size={15} class="hidden shrink-0 sm:block" aria-hidden="true" />
+				{view.label}<span class="text-xs font-normal text-muted">{view.count}</span>
+			</button>
+		{/each}
 	</div>
 
 	<div class="flex flex-wrap items-center gap-2 lg:ml-auto">
@@ -323,16 +411,56 @@
 				{#each EXPERIENCES as x (x)}<option value={x}>{EXPERIENCE_LABELS[x]}</option>{/each}
 			</select>
 			{#if data.me}
-				<label class="flex cursor-pointer items-center gap-2 text-sm text-muted">
-					<input
-						type="checkbox"
-						checked={overlapOnly}
-						onchange={(e) => setParam('overlap', e.currentTarget.checked ? '1' : null)}
-					/>
-					Good timezone overlap
-				</label>
+				<div
+					bind:this={overlapHelp}
+					class="relative flex w-full items-center gap-1 sm:w-auto"
+					role="group"
+					aria-label="Timezone overlap filter"
+					onpointerenter={(event) => {
+						if (event.pointerType === 'mouse') overlapHelpOpen = true;
+					}}
+					onpointerleave={() => {
+						if (!overlapHelp?.contains(document.activeElement)) overlapHelpOpen = false;
+					}}
+					onfocusin={() => (overlapHelpOpen = true)}
+					onfocusout={(event) => {
+						if (!overlapHelp?.contains(event.relatedTarget as Node)) overlapHelpOpen = false;
+					}}
+				>
+					<label class="flex cursor-pointer items-center gap-2 text-sm text-muted">
+						<input
+							type="checkbox"
+							aria-describedby={overlapHelpId}
+							checked={overlapOnly}
+							onchange={(e) => setParam('overlap', e.currentTarget.checked ? '1' : null)}
+						/>
+						Good timezone overlap
+					</label>
+					<button
+						type="button"
+						class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted hover:bg-surface-2 hover:text-text"
+						aria-label="About good timezone overlap"
+						aria-describedby={overlapHelpId}
+						aria-expanded={overlapHelpOpen}
+						onclick={() => (overlapHelpOpen = true)}
+					>
+						<CircleHelp size={16} aria-hidden="true" />
+					</button>
+					<div
+						id={overlapHelpId}
+						role="tooltip"
+						hidden={!overlapHelpOpen}
+						class="absolute top-full left-0 z-30 w-72 max-w-[calc(100vw-2rem)] pt-2 sm:right-0 sm:left-auto"
+					>
+						<p
+							class="rounded-md border border-border bg-surface p-3 text-left text-xs leading-relaxed text-text shadow-lg"
+						>
+							{overlapDefinition}
+						</p>
+					</div>
+				</div>
 			{/if}
-		{:else if data.me}
+		{:else if tab === 'teams' && data.me}
 			<label class="flex cursor-pointer items-center gap-2 text-sm text-muted">
 				<input
 					type="checkbox"
@@ -345,108 +473,143 @@
 	</div>
 </div>
 
-<!-- Lists -->
-<div class="mt-4">
-	{#if tab === 'players'}
-		{#if players.length}
-			<div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-				{#each players as post (post.id)}
-					<PlayerCard
-						user={post.user}
-						roles={post.roles}
-						message={post.message}
-						updatedAt={post.updatedAt}
-						viewerTimezone={data.me?.timezone}
-					>
-						{#snippet actions()}
-							{#if canInvite && myTeam}
-								{@const inviteId = inviteIdFor(post.user.id)}
-								{#if inviteId}
-									<form method="POST" action="?/cancel" use:enhance={withToasts()}>
-										<input type="hidden" name="requestId" value={inviteId} />
-										<button class="btn-ghost btn-sm" title="Cancel invite"
-											><Check size={14} aria-hidden="true" />Invited · Undo</button
-										>
-									</form>
-								{:else}
-									<button class="btn-primary btn-sm" onclick={() => (inviteUser = post.user)}
-										>Invite to {myTeam.name}</button
-									>
-								{/if}
-							{:else if canTeamUp}
-								{@const sentId = teamUpSentTo(post.user.id)}
-								{@const receivedId = teamUpFrom(post.user.id)}
-								{#if receivedId}
-									<form method="POST" action="?/respondTeamUp" use:enhance={withToasts()}>
-										<input type="hidden" name="teamUpId" value={receivedId} />
-										<button class="btn-primary btn-sm" name="accept" value="1"
-											><Handshake size={14} aria-hidden="true" />Accept team-up</button
-										>
-									</form>
-								{:else if sentId}
-									<form method="POST" action="?/cancelTeamUp" use:enhance={withToasts()}>
-										<input type="hidden" name="teamUpId" value={sentId} />
-										<button class="btn-ghost btn-sm" title="Cancel request"
-											><Check size={14} aria-hidden="true" />Team-up sent · Undo</button
-										>
-									</form>
-								{:else}
-									<button class="btn-primary btn-sm" onclick={() => (teamUpUser = post.user)}
-										><Handshake size={14} aria-hidden="true" />Team up</button
-									>
-								{/if}
-							{/if}
-							<ContactButton user={post.user} signedIn={!!data.me} {loginHref} />
-						{/snippet}
-					</PlayerCard>
-				{/each}
-			</div>
-		{:else}
-			<EmptyState
-				icon={UserRoundSearch}
-				title={board.posts.length ? 'Nobody matches these filters' : 'Nobody is looking yet'}
-			>
-				{#if board.posts.length}
-					Try removing a filter.
+<!-- Every view uses the same cards and grid; All mixes both kinds of listing. -->
+{#snippet personResult(post: (typeof board.posts)[number])}
+	<PlayerCard
+		showType
+		user={post.user}
+		roles={post.roles}
+		message={post.message}
+		updatedAt={post.updatedAt}
+		viewerTimezone={data.me?.timezone}
+	>
+		{#snippet actions()}
+			{#if canInvite && myTeam}
+				{@const inviteId = inviteIdFor(post.user.id)}
+				{#if inviteId}
+					<form method="POST" action="?/cancel" use:enhance={withToasts()}>
+						<input type="hidden" name="requestId" value={inviteId} />
+						<button class="btn-ghost btn-sm" title="Cancel invite"
+							><Check size={14} aria-hidden="true" />Invited · Undo</button
+						>
+					</form>
 				{:else}
-					Be the first! Post that you're available and teams will find you.
+					<button class="btn-primary btn-sm" onclick={() => (inviteUser = post.user)}
+						>Invite to {myTeam.name}</button
+					>
 				{/if}
-			</EmptyState>
-		{/if}
-	{:else if teamsShown.length}
-		<div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-			{#each teamsShown as team (team.id)}
-				<TeamCard {team} highlight={fitsMe(team.openRoles) && team.status === 'open'}>
-					{#snippet actions()}
-						<a href="/teams/{team.id}" class="btn-ghost btn-sm">View team</a>
-						{#if data.me && !viewer?.myTeamId && team.status === 'open'}
-							{@const requestId = requestIdFor(team.id)}
-							{#if requestId}
-								<form method="POST" action="?/cancel" use:enhance={withToasts()}>
-									<input type="hidden" name="requestId" value={requestId} />
-									<button class="btn-ghost btn-sm" title="Withdraw request"
-										><Check size={14} aria-hidden="true" />Requested · Undo</button
-									>
-								</form>
-							{:else}
-								<button class="btn-primary btn-sm" onclick={() => (requestTeam = team)}
-									>Ask to join</button
-								>
-							{/if}
-						{/if}
-					{/snippet}
-				</TeamCard>
+			{:else if canTeamUp}
+				{@const sentId = teamUpSentTo(post.user.id)}
+				{@const receivedId = teamUpFrom(post.user.id)}
+				{#if receivedId}
+					<form method="POST" action="?/respondTeamUp" use:enhance={withToasts()}>
+						<input type="hidden" name="teamUpId" value={receivedId} />
+						<button class="btn-primary btn-sm" name="accept" value="1"
+							><Handshake size={14} aria-hidden="true" />Accept team-up</button
+						>
+					</form>
+				{:else if sentId}
+					<form method="POST" action="?/cancelTeamUp" use:enhance={withToasts()}>
+						<input type="hidden" name="teamUpId" value={sentId} />
+						<button class="btn-ghost btn-sm" title="Cancel request"
+							><Check size={14} aria-hidden="true" />Team-up sent · Undo</button
+						>
+					</form>
+				{:else}
+					<button class="btn-primary btn-sm" onclick={() => (teamUpUser = post.user)}
+						><Handshake size={14} aria-hidden="true" />Team up</button
+					>
+				{/if}
+			{/if}
+			<ContactButton user={post.user} signedIn={!!data.me} {loginHref} />
+		{/snippet}
+	</PlayerCard>
+{/snippet}
+
+{#snippet teamResult(team: (typeof board.teams)[number])}
+	<TeamCard {team} showType highlight={fitsMe(team.openRoles) && team.status === 'open'}>
+		{#snippet actions()}
+			<a href="/teams/{team.id}" class="btn-ghost btn-sm">View team</a>
+			{#if data.me && !viewer?.myTeamId && team.status === 'open'}
+				{@const requestId = requestIdFor(team.id)}
+				{#if requestId}
+					<form method="POST" action="?/cancel" use:enhance={withToasts()}>
+						<input type="hidden" name="requestId" value={requestId} />
+						<button class="btn-ghost btn-sm" title="Withdraw request"
+							><Check size={14} aria-hidden="true" />Requested · Undo</button
+						>
+					</form>
+				{:else}
+					<button class="btn-primary btn-sm" onclick={() => (requestTeam = team)}
+						>Ask to join</button
+					>
+				{/if}
+			{/if}
+		{/snippet}
+	</TeamCard>
+{/snippet}
+
+<div id="board-results" class="mt-4" role="tabpanel" aria-labelledby="board-tab-{tab}" tabindex="0">
+	<p class="mb-3 text-xs text-muted" aria-live="polite">
+		{tab === 'all'
+			? `${peopleSummary} · ${teamsSummary}`
+			: tab === 'players'
+				? peopleSummary
+				: teamsSummary}
+	</p>
+	{#if results.length}
+		<div class="card-grid">
+			{#each results as result (`${result.kind}-${result.id}`)}
+				{#if result.kind === 'person'}
+					{@render personResult(result.post)}
+				{:else}
+					{@render teamResult(result.team)}
+				{/if}
 			{/each}
 		</div>
+	{:else if tab === 'players'}
+		<EmptyState
+			icon={UserRoundSearch}
+			title={otherPosts.length
+				? 'Nobody matches these filters'
+				: viewer?.myPost
+					? 'You’re the only one looking so far'
+					: 'Nobody is looking yet'}
+		>
+			{#if otherPosts.length}
+				Try another role or <a href="/jams/{jam.slug}?tab=players" class="link">clear filters</a>.
+			{:else if viewer?.myPost}
+				Your post is live. Check back later, or browse teams that are recruiting.
+			{:else}
+				Be the first! Post that you're available and teams will find you.
+			{/if}
+		</EmptyState>
+	{:else if tab === 'teams'}
+		<EmptyState
+			icon={Users}
+			title={myTeam && board.teams.length === 1
+				? 'Yours is the only team so far'
+				: recruitingTeams.length
+					? 'No teams match these filters'
+					: 'No teams are recruiting yet'}
+		>
+			{#if myTeam && board.teams.length === 1}
+				Invite people from the People tab, or share your team’s link.
+			{:else if recruitingTeams.length}
+				Try another role or <a href="/jams/{jam.slug}?tab=teams" class="link">clear filters</a>.
+			{:else}
+				Start a team, list the roles you need, and invite people from the People tab.
+			{/if}
+		</EmptyState>
 	{:else}
 		<EmptyState
 			icon={Users}
-			title={board.teams.length ? 'No teams match these filters' : 'No teams yet'}
+			title={roleFilter ? 'No matches for this role' : 'No other jammers yet'}
 		>
-			{#if board.teams.length}
-				Try removing a filter.
+			{#if roleFilter}
+				Try another role or <a href="/jams/{jam.slug}" class="link">clear filters</a>.
 			{:else}
-				Start a team, list the roles you need, and invite people from the "Looking for a team" tab.
+				People looking for a team and teams recruiting members will show up here.
 			{/if}
 		</EmptyState>
 	{/if}

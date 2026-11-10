@@ -55,6 +55,7 @@ test('two jammers find each other and form a team', async ({ browser }, testInfo
 	await expect(bob.getByRole('button', { name: `Discord: alice${run}_dc` })).toBeVisible();
 	await go(bob, `/jams/${slug}`);
 	await expect(bob.getByText(/You're on/)).toBeVisible();
+	await bob.getByRole('tab', { name: /^People/ }).click();
 	await expect(bob.getByText('Nobody is looking yet')).toBeVisible();
 });
 

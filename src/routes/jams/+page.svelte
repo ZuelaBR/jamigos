@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Search from '@lucide/svelte/icons/search';
@@ -26,6 +27,7 @@
 	}
 
 	let searchTimer: ReturnType<typeof setTimeout>;
+	onDestroy(() => clearTimeout(searchTimer));
 	function onSearch(e: Event) {
 		const value = (e.currentTarget as HTMLInputElement).value;
 		clearTimeout(searchTimer);
@@ -56,46 +58,53 @@
 </div>
 
 {#if showAdd || form?.message}
-	<form
-		method="POST"
-		action="?/add"
-		class="mt-4 flex flex-col gap-3 card p-4 sm:flex-row sm:items-start"
-		use:enhance={() => {
-			adding = true;
-			return async ({ result, update }) => {
-				adding = false;
-				if (result.type === 'failure')
-					toast(String(result.data?.message ?? 'Could not add that jam.'), 'error');
-				if (result.type === 'error') toast('Please sign in to add a jam.', 'error');
-				await update({ reset: false, navigate: false });
-			};
-		}}
-	>
-		<div class="flex-1">
-			<label for="jam-url" class="sr-only">itch.io jam link</label>
-			<input
-				id="jam-url"
-				name="url"
-				class="w-full"
-				placeholder="https://itch.io/jam/your-jam"
-				value={form?.url ?? ''}
-				required
-			/>
-			{#if form?.message}<p class="field-error">{form.message}</p>{/if}
-			<p class="hint">
-				Unlisted or brand-new jams can be added by link. Popular jams are imported automatically.
-			</p>
+	{#if !data.user}
+		<div class="mt-4 flex card flex-wrap items-center justify-between gap-3 p-4">
+			<p>Sign in to add a jam by its itch.io link.</p>
+			<a href="/login?next=%2Fjams" class="btn-primary">Sign in with itch.io</a>
 		</div>
-		<button class="btn-primary" disabled={adding}>{adding ? 'Looking it up…' : 'Add jam'}</button>
-	</form>
+	{:else}
+		<form
+			method="POST"
+			action="?/add"
+			class="mt-4 flex card flex-col gap-3 p-4 sm:flex-row sm:items-start"
+			use:enhance={() => {
+				adding = true;
+				return async ({ result, update }) => {
+					adding = false;
+					if (result.type === 'failure')
+						toast(String(result.data?.message ?? 'Could not add that jam.'), 'error');
+					if (result.type === 'error')
+						toast(result.error.message ?? 'Could not add that jam. Please try again.', 'error');
+					await update({ reset: false, navigate: false });
+				};
+			}}
+		>
+			<div class="flex-1">
+				<label for="jam-url" class="sr-only">itch.io jam link</label>
+				<input
+					id="jam-url"
+					name="url"
+					class="w-full"
+					placeholder="https://itch.io/jam/your-jam"
+					value={form?.url ?? ''}
+					required
+				/>
+				{#if form?.message}<p class="field-error">{form.message}</p>{/if}
+				<p class="hint">
+					Unlisted or brand-new jams can be added by link. Popular jams are imported automatically.
+				</p>
+			</div>
+			<button class="btn-primary" disabled={adding}>{adding ? 'Looking it up…' : 'Add jam'}</button>
+		</form>
+	{/if}
 {/if}
 
 <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-	<div class="flex rounded-lg border border-border p-1" role="tablist">
+	<nav class="flex rounded-lg border border-border p-1" aria-label="Jam timing">
 		{#each tabs as t (t.id)}
 			<a
-				role="tab"
-				aria-selected={data.filters.tab === t.id}
+				aria-current={data.filters.tab === t.id ? 'page' : undefined}
 				href={href({ tab: t.id === 'running' ? null : t.id })}
 				class="rounded-md px-3 py-1.5 text-sm font-medium {data.filters.tab === t.id
 					? 'bg-surface-2 text-text'
@@ -104,15 +113,26 @@
 				{t.label}
 			</a>
 		{/each}
-	</div>
-	<input
-		type="search"
-		placeholder="Search jams…"
-		value={data.filters.q}
-		oninput={onSearch}
+	</nav>
+	<form
+		method="GET"
+		action="/jams"
 		class="w-full sm:max-w-xs"
-		aria-label="Search jams"
-	/>
+		onsubmit={() => clearTimeout(searchTimer)}
+	>
+		<input type="hidden" name="tab" value={data.filters.tab} />
+		<input type="hidden" name="sort" value={data.filters.sort} />
+		<input
+			name="q"
+			type="search"
+			placeholder="Search jams…"
+			value={data.filters.q}
+			oninput={onSearch}
+			class="w-full"
+			aria-label="Search jams"
+		/>
+		<button class="sr-only focus:not-sr-only">Search</button>
+	</form>
 	<select
 		class="sm:ml-auto"
 		aria-label="Sort jams"
@@ -131,7 +151,7 @@
 {/if}
 
 {#if data.jams.length}
-	<div class="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+	<div class="mt-6 card-grid">
 		{#each data.jams as jam (jam.id)}<JamCard {jam} />{/each}
 	</div>
 	<div class="mt-8 flex justify-center gap-3">

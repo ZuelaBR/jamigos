@@ -46,6 +46,7 @@ test('two solo jammers team up and become a team', async ({ browser }, testInfo)
 	// Mika (the sender) owns the team and renames it.
 	await go(mika, `/jams/${slug}`);
 	await expect(mika.getByText(/You're on/)).toBeVisible();
+	await mika.getByRole('tab', { name: /^People/ }).click();
 	await expect(mika.getByText('Nobody is looking yet')).toBeVisible(); // both posts closed
 	await go(mika, teamUrl);
 	await mika.getByRole('button', { name: 'Edit team' }).click();
