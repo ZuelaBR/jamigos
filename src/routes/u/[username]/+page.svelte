@@ -4,27 +4,22 @@
 	import OverlapBadge from '#lib/components/OverlapBadge.svelte';
 	import RoleChip from '#lib/components/RoleChip.svelte';
 	import { EXPERIENCE_LABELS } from '#lib/profile.ts';
-	import { toast } from '#lib/toast.svelte.ts';
+	import { copyToClipboard as copy } from '#lib/clipboard.ts';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	const p = $derived(data.profile);
 	const loginHref = $derived(`/login?next=${encodeURIComponent(`/u/${p.username}`)}`);
-
-	async function copy(text: string) {
-		await navigator.clipboard.writeText(text);
-		toast('Copied to clipboard.');
-	}
 </script>
 
 <svelte:head><title>{p.displayName || p.username} · Jamigos</title></svelte:head>
 
-<div class="mx-auto grid max-w-4xl gap-6 md:grid-cols-[1fr_280px]">
-	<section class="card p-6">
+<div class="mx-auto grid max-w-4xl gap-6 md:grid-cols-[minmax(0,1fr)_280px]">
+	<section class="card min-w-0 card-panel">
 		<div class="flex items-start gap-4">
 			<Avatar user={p} size={72} />
 			<div class="min-w-0 flex-1">
-				<h1 class="truncate text-2xl font-bold">{p.displayName || p.username}</h1>
+				<h1 class="text-xl font-bold sm:text-2xl">{p.displayName || p.username}</h1>
 				<a
 					href={p.itchUrl}
 					target="_blank"
@@ -82,8 +77,8 @@
 		{/if}
 	</section>
 
-	<aside class="space-y-4">
-		<div class="card p-5">
+	<aside class="min-w-0 space-y-4">
+		<div class="card card-panel">
 			<h2 class="mb-3 font-semibold">Get in touch</h2>
 			{#if !data.showContact}
 				<p class="text-sm text-muted">
@@ -93,8 +88,10 @@
 			{:else}
 				<ul class="space-y-2 text-sm">
 					{#if p.contactDiscord}
-						<li class="flex items-center justify-between gap-2">
-							<span><span class="text-muted">Discord</span> · {p.contactDiscord}</span>
+						<li class="flex flex-wrap items-center justify-between gap-2">
+							<span class="min-w-0"
+								><span class="text-muted">Discord</span> · {p.contactDiscord}</span
+							>
 							<button class="btn-ghost btn-sm" onclick={() => copy(p.contactDiscord!)}>Copy</button>
 						</li>
 					{/if}
@@ -109,7 +106,7 @@
 		</div>
 
 		{#if data.memberships.length}
-			<div class="card p-5">
+			<div class="card card-panel">
 				<h2 class="mb-3 font-semibold">Teams</h2>
 				<ul class="space-y-2 text-sm">
 					{#each data.memberships as m (m.teamId)}

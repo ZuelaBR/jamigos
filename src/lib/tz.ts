@@ -66,5 +66,5 @@ export function overlapLevel(hours: number): 'great' | 'ok' | 'low' {
 
 export function timeZoneOptions(): string[] {
 	const supported = (Intl as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
-	return supported ? supported('timeZone') : ['UTC'];
+	return ['UTC', ...(supported ? supported('timeZone').filter((zone) => zone !== 'UTC') : [])];
 }

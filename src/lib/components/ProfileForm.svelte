@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import RoleIcon from './RoleIcon.svelte';
 	import TagInput from './TagInput.svelte';
 	import {
@@ -50,11 +50,12 @@
 	let links = $state<string[]>(values.links.length ? [...values.links] : ['']);
 	let step = $state(0);
 	let submitting = $state(false);
+	let formElement: HTMLFormElement | undefined = $state();
 	// The step-by-step UI needs JS; without it the whole form is shown on one page.
 	let mounted = $state(false);
 	const stepped = $derived(wizard && mounted);
 
-	const zones = timeZoneOptions();
+	const zones = $derived([...new Set([...timeZoneOptions(), timezone])]);
 	const steps = ['What you do', 'Your setup', 'How to reach you'];
 	const offsetLabel = $derived.by(() => {
 		try {
@@ -89,6 +90,7 @@
 </script>
 
 <form
+	bind:this={formElement}
 	method="POST"
 	class="space-y-8"
 	use:enhance={() => {
@@ -98,6 +100,10 @@
 			if (result.type === 'failure') toast('Please fix the highlighted fields.', 'error');
 			if (result.type === 'success') toast('Profile saved.');
 			await update({ reset: false, navigate: false });
+			if (result.type === 'failure') {
+				await tick();
+				formElement?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+			}
 		};
 	}}
 >
@@ -125,13 +131,21 @@
 			<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 				{#each ROLES as role (role)}
 					<label class="choice w-full">
-						<input type="checkbox" name="roles" value={role} bind:group={roles} class="sr-only" />
+						<input
+							type="checkbox"
+							name="roles"
+							value={role}
+							bind:group={roles}
+							class="sr-only"
+							aria-invalid={!!errors.roles}
+							aria-describedby={errors.roles ? 'roles-error' : undefined}
+						/>
 						<RoleIcon {role} size={16} />
 						{ROLE_LABELS[role]}
 					</label>
 				{/each}
 			</div>
-			{#if errors.roles}<p class="field-error">{errors.roles}</p>{/if}
+			{#if errors.roles}<p id="roles-error" class="field-error">{errors.roles}</p>{/if}
 		</fieldset>
 
 		<fieldset>
@@ -165,13 +179,20 @@
 		<div>
 			<label class="label" for="timezone">Timezone</label>
 			<div class="flex items-center gap-3">
-				<select id="timezone" name="timezone" bind:value={timezone} class="w-full max-w-sm">
+				<select
+					id="timezone"
+					name="timezone"
+					bind:value={timezone}
+					class="w-full max-w-sm min-w-0"
+					aria-invalid={!!errors.timezone}
+					aria-describedby={errors.timezone ? 'timezone-error' : undefined}
+				>
 					{#each zones as z (z)}<option value={z}>{z.replaceAll('_', ' ')}</option>{/each}
 				</select>
-				<span class="text-sm text-muted">{offsetLabel}</span>
+				<span class="shrink-0 text-sm whitespace-nowrap text-muted">{offsetLabel}</span>
 			</div>
 			<p class="hint">Used to show how many waking hours you overlap with teammates.</p>
-			{#if errors.timezone}<p class="field-error">{errors.timezone}</p>{/if}
+			{#if errors.timezone}<p id="timezone-error" class="field-error">{errors.timezone}</p>{/if}
 		</div>
 	</section>
 
@@ -184,11 +205,13 @@
 				name="bio"
 				rows="3"
 				maxlength="500"
+				aria-invalid={!!errors.bio}
+				aria-describedby={errors.bio ? 'bio-error' : undefined}
 				class="w-full"
 				placeholder="Pixel artist who loves cozy games. Looking for a programmer for my first jam!"
 				>{values.bio}</textarea
 			>
-			{#if errors.bio}<p class="field-error">{errors.bio}</p>{/if}
+			{#if errors.bio}<p id="bio-error" class="field-error">{errors.bio}</p>{/if}
 		</div>
 
 		<div class="sm:max-w-sm">
@@ -200,9 +223,13 @@
 					class="w-full"
 					autocomplete="off"
 					placeholder="yourname"
+					aria-invalid={!!errors.contactDiscord}
+					aria-describedby={errors.contactDiscord ? 'discord-error' : undefined}
 					value={values.contactDiscord ?? ''}
 				/>
-				{#if errors.contactDiscord}<p class="field-error">{errors.contactDiscord}</p>{/if}
+				{#if errors.contactDiscord}<p id="discord-error" class="field-error">
+						{errors.contactDiscord}
+					</p>{/if}
 			</div>
 		</div>
 		<p class="hint -mt-4">
@@ -224,6 +251,8 @@
 							placeholder="https://…"
 							bind:value={links[i]}
 							aria-label="Portfolio link {i + 1}"
+							aria-invalid={!!errors.links}
+							aria-describedby={errors.links ? 'links-error' : undefined}
 						/>
 						{#if links.length > 1}
 							<button
@@ -243,7 +272,7 @@
 					>
 				{/if}
 			</div>
-			{#if errors.links}<p class="field-error">{errors.links}</p>{/if}
+			{#if errors.links}<p id="links-error" class="field-error">{errors.links}</p>{/if}
 		</div>
 	</section>
 

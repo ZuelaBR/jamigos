@@ -7,14 +7,16 @@
 		size?: number;
 	} = $props();
 	const name = $derived(user.displayName || user.username);
+	let failedUrl = $state<string | null>(null);
 	// Deterministic background colour from the username.
 	const hue = $derived([...user.username].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 0));
 </script>
 
-{#if user.avatarUrl}
+{#if user.avatarUrl && user.avatarUrl !== failedUrl}
 	<img
 		src={user.avatarUrl}
-		alt=""
+		alt={name}
+		onerror={() => (failedUrl = user.avatarUrl ?? null)}
 		width={size}
 		height={size}
 		class="shrink-0 rounded-full object-cover"
@@ -23,7 +25,8 @@
 	/>
 {:else}
 	<span
-		aria-hidden="true"
+		role="img"
+		aria-label={name}
 		class="inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white"
 		style="width:{size}px;height:{size}px;background:hsl({hue} 45% 38%);font-size:{size * 0.42}px"
 	>

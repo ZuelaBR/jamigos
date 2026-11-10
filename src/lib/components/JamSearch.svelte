@@ -124,7 +124,7 @@
 		<ul
 			id={listId}
 			role="listbox"
-			class="absolute inset-x-0 z-30 mt-1 max-h-[22rem] overflow-auto card py-1 text-left shadow-xl"
+			class="absolute inset-x-0 z-30 mt-1 max-h-[22rem] card overflow-auto py-1 text-left shadow-xl"
 		>
 			{#each results as r, i (r.slug)}
 				{@const t = timing(r)}

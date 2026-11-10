@@ -1,9 +1,34 @@
-import { expect, type Browser, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 
 /** Navigate and wait for hydration so clicks aren't lost before JS takes over. */
 export async function go(page: Page, url: string) {
 	await page.goto(url);
 	await page.locator('html[data-hydrated]').waitFor();
+}
+
+export function contextOptions() {
+	const {
+		viewport,
+		isMobile,
+		hasTouch,
+		deviceScaleFactor,
+		userAgent,
+		baseURL,
+		timezoneId,
+		locale,
+		colorScheme
+	} = test.info().project.use;
+	return {
+		viewport,
+		isMobile,
+		hasTouch,
+		deviceScaleFactor,
+		userAgent,
+		baseURL,
+		timezoneId,
+		locale,
+		colorScheme
+	};
 }
 
 /** Role/experience pickers use visually-hidden inputs inside styled labels; click the label like a user. */
@@ -23,7 +48,7 @@ export async function signInAndOnboard(
 	role: string,
 	tz: string
 ) {
-	const context = await browser.newContext();
+	const context = await browser.newContext(contextOptions());
 	const page = await context.newPage();
 	await go(page, `/auth/dev?user=${username}&next=/jams`);
 	await expect(page).toHaveURL(/\/onboarding/);

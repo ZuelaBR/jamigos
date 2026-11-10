@@ -23,7 +23,7 @@
 
 <a
 	href="/jams/{jam.slug}"
-	class="group flex gap-4 card p-3 transition-colors hover:border-accent/60 hover:bg-surface-2"
+	class="group flex h-full card gap-3 p-4 transition-colors hover:border-accent/60 hover:bg-surface-2"
 >
 	<div class="h-[84px] w-[106px] shrink-0 overflow-hidden rounded-lg bg-surface-2">
 		{#if jam.coverUrl}

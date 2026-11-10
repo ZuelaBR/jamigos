@@ -9,7 +9,13 @@ export function parseTheme(value: string | undefined | null): Theme {
 
 /** Applies the theme immediately and remembers it for future server renders. */
 export function applyTheme(theme: Theme) {
-	document.documentElement.dataset.theme = theme === 'system' ? '' : theme;
+	const root = document.documentElement;
+	// Hover transitions can otherwise leave light text/background colors out of
+	// sync for a few frames when the entire color scheme changes.
+	root.dataset.themeSwitching = '';
+	root.dataset.theme = theme === 'system' ? '' : theme;
+	void root.offsetHeight;
+	requestAnimationFrame(() => delete root.dataset.themeSwitching);
 	document.cookie =
 		theme === 'system'
 			? `${THEME_COOKIE}=; path=/; max-age=0; samesite=lax`

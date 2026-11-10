@@ -14,7 +14,7 @@
 			>View public profile →</a
 		>
 	</div>
-	<div class="mt-6 card p-5 sm:p-8">
+	<div class="mt-6 card card-panel">
 		<ProfileForm values={data.values} errors={form && 'errors' in form ? form.errors : undefined} />
 	</div>
 </div>

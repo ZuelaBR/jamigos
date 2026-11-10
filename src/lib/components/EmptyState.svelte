@@ -12,7 +12,7 @@
 	} = $props();
 </script>
 
-<div class="flex flex-col items-center gap-3 card px-6 py-12 text-center">
+<div class="flex card flex-col items-center gap-3 px-6 py-12 text-center">
 	<span
 		class="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent"
 		aria-hidden="true"

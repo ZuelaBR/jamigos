@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Wrench from '@lucide/svelte/icons/wrench';
+	import UserRoundSearch from '@lucide/svelte/icons/user-round-search';
 	import type { Snippet } from 'svelte';
 	import Avatar from './Avatar.svelte';
 	import OverlapBadge from './OverlapBadge.svelte';
@@ -13,6 +14,7 @@
 		message,
 		updatedAt,
 		viewerTimezone,
+		showType = false,
 		actions
 	}: {
 		user: {
@@ -27,11 +29,23 @@
 		message: string;
 		updatedAt: Date;
 		viewerTimezone?: string | null;
+		showType?: boolean;
 		actions?: Snippet;
 	} = $props();
 </script>
 
-<article class="flex flex-col gap-3 card p-4">
+<article
+	class="card-content h-full card"
+	aria-label={showType ? `Person: ${user.displayName || user.username}` : undefined}
+>
+	{#if showType}
+		<div class="flex flex-wrap items-center gap-2 text-xs">
+			<span class="inline-flex items-center gap-1 rounded-sm bg-surface-2 px-2 py-1 font-bold"
+				><UserRoundSearch size={13} aria-hidden="true" />Person</span
+			>
+			<span class="text-muted">Looking for a team</span>
+		</div>
+	{/if}
 	<header class="flex items-start gap-3">
 		<a href="/u/{user.username}" class="shrink-0"><Avatar {user} size={44} /></a>
 		<div class="min-w-0 flex-1">
@@ -53,7 +67,7 @@
 		{#each roles as role (role)}<RoleChip {role} />{/each}
 	</div>
 
-	{#if message}<p class="line-clamp-4 text-sm whitespace-pre-line text-text/90">{message}</p>{/if}
+	{#if message}<p class="line-clamp-3 text-sm whitespace-pre-line text-text/90">{message}</p>{/if}
 
 	{#if user.tools.length}
 		<p class="flex items-center gap-1.5 text-xs text-muted" title={user.tools.join(', ')}>
@@ -63,5 +77,5 @@
 		</p>
 	{/if}
 
-	{#if actions}<footer class="mt-auto flex flex-wrap gap-2 pt-1">{@render actions()}</footer>{/if}
+	{#if actions}<footer class="card-actions">{@render actions()}</footer>{/if}
 </article>

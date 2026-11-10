@@ -14,7 +14,7 @@
 	<p class="mt-2 text-muted">
 		Tell other jammers what you're good at. It takes about a minute, and you can change it any time.
 	</p>
-	<div class="mt-8 card p-5 sm:p-8">
+	<div class="mt-8 card card-panel">
 		<ProfileForm
 			values={data.values}
 			errors={form?.errors}
