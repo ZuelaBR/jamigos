@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import JamCard from '#lib/components/JamCard.svelte';
 	import JamSearch from '#lib/components/JamSearch.svelte';
 	import PlayerCard from '#lib/components/PlayerCard.svelte';
 	import TeamCard from '#lib/components/TeamCard.svelte';
-	import { APP_NAME, TAGLINE } from '#lib/config.ts';
+	import { APP_NAME, TAGLINE, REPOSITORY_URL, FEATURE_REQUEST_URL } from '#lib/config.ts';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import Check from '@lucide/svelte/icons/check';
 	import Clock from '@lucide/svelte/icons/clock';
@@ -18,8 +19,13 @@
 	let { data }: PageProps = $props();
 
 	const s = $derived(data.stats);
+	const communityStats = $derived([
+		{ label: 'Ongoing jams', value: s.runningJams },
+		{ label: 'Upcoming jams', value: s.upcomingJams },
+		{ label: 'Open teams', value: s.openTeams },
+		{ label: 'People looking for teams', value: s.looking }
+	]);
 	const signedIn = $derived(!!data.user);
-	const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 	// Illustrative examples for the "how it works" previews (rendered with the real components).
 	const exampleUser = {
@@ -87,31 +93,89 @@
 	];
 
 	const faqs = [
-		['Is Jamigos free?', 'Yes, completely. There are no paid features.'],
-		[
-			'Is this an official itch.io site?',
-			`No. ${APP_NAME} is a fan-made tool and isn't affiliated with itch.io. You sign in with your itch.io account, so everyone you meet here is a real itch.io user.`
-		],
-		[
-			'What can Jamigos see from my itch.io account?',
-			'Only your public profile: username, display name, avatar and profile link. Never your password or email address.'
-		],
-		[
-			'How do I talk to my teammates?',
-			"There's no chat. Profiles show a Discord username and the itch.io profile, and only signed-in users can see them."
-		],
-		[
-			"My jam isn't listed. What do I do?",
-			'Jams are imported from itch.io automatically every few hours. For anything missing, paste the jam link on the Browse jams page and it is added instantly.'
-		],
-		[
-			'Can I be on more than one team?',
-			'One team per jam, so teams know you are committed, but you can join as many jams as you like.'
-		]
+		{
+			id: 'free-forever',
+			question: 'Is Jamigos free?',
+			answers: [
+				'Yep. This is a hobby project, not a business. I’m not trying to make money from it, and I never plan to charge for any feature.'
+			]
+		},
+		{
+			id: 'fan-project',
+			question: 'Who made this? Is it part of itch.io?',
+			answers: [
+				'I made Jamigos as a fan project for people joining game jams. It’s not affiliated with itch.io.',
+				'I vibe coded it with Claude and Codex. I can code, but writing the whole thing by hand didn’t feel worth the time with these tools around.'
+			]
+		},
+		{
+			id: 'feature-requests',
+			question: 'Can I request a feature or help out?',
+			answers: [
+				'Please do! If something’s missing, open an issue on GitHub and tell me what you’d like to do. You can report bugs there too.',
+				'Jamigos is open source, and all the code is on GitHub. If you’d rather build the feature yourself, pull requests are welcome.'
+			],
+			links: [
+				{ href: FEATURE_REQUEST_URL, label: 'Request a feature' },
+				{ href: REPOSITORY_URL, label: 'Browse the code' }
+			]
+		},
+		{
+			id: 'data-storage',
+			question: 'What data do you keep?',
+			answers: [
+				'When you sign in, we save your public itch.io profile: user ID, username, display name, avatar URL and profile link. We don’t get your password or email address, and we don’t save the itch.io access token in our database.',
+				'We also save what you add here: your skills, tools, experience, timezone, bio, Discord username and portfolio links; your posts, teams and memberships; and invitations, join requests and team-up requests, including their messages and whether they were accepted, declined or withdrawn.',
+				'The database keeps your notifications and whether you’ve read them, when your account and activity were created or updated, and whether you’ve finished setting up your profile. To keep you signed in, it stores a hashed version of your login token and its expiry date. We also keep a copy of the public jam listings.'
+			]
+		},
+		{
+			id: 'data-visibility',
+			question: 'Who can see my information?',
+			answers: [
+				'Anyone can see your profile, portfolio links, posts and teams. Your Discord username is only shown to people who are signed in.',
+				'Request messages are only shown to the people involved, including the team owner for team requests. Your notifications are just for you. The code is public on GitHub; the user database isn’t.'
+			]
+		},
+		{
+			id: 'contact-teammates',
+			question: 'How do I talk to my teammates?',
+			answers: [
+				'There’s no chat here. Use the Contact button to find someone’s Discord username, if they’ve added one, or visit their itch.io profile.'
+			]
+		},
+		{
+			id: 'missing-jams',
+			question: 'My jam isn’t listed. Can I add it?',
+			answers: [
+				'Yes. Paste its itch.io link on the Browse jams page. We import listings every few hours, but you don’t need to wait for that.'
+			]
+		},
+		{
+			id: 'multiple-teams',
+			question: 'Can I join more than one team?',
+			answers: ['You can join one team per jam, and as many different jams as you like.']
+		}
 	];
 </script>
 
 <svelte:head><title>{APP_NAME} · Find teammates for itch.io game jams</title></svelte:head>
+
+<section
+	class="bleed -mt-6 border-b border-border bg-surface-2 py-4 sm:-mt-8 sm:py-5"
+	aria-label="Community stats"
+>
+	<dl class="mx-auto grid max-w-5xl grid-cols-2 gap-x-6 gap-y-4 text-center sm:grid-cols-4">
+		{#each communityStats as stat (stat.label)}
+			<div class="flex min-w-0 flex-col gap-1">
+				<dt class="order-2 text-xs text-muted sm:text-sm">{stat.label}</dt>
+				<dd class="order-1 text-2xl font-black tabular-nums sm:text-3xl">
+					{stat.value.toLocaleString('en')}
+				</dd>
+			</div>
+		{/each}
+	</dl>
+</section>
 
 <!-- 1. Hero: what is this, in one glance -->
 <section class="mx-auto max-w-3xl pt-4 pb-10 text-center sm:pt-8 sm:pb-16">
@@ -143,6 +207,7 @@
 	<div class="mt-8 flex flex-wrap justify-center gap-3">
 		{#if signedIn}
 			<a href="/jams" class="btn-primary btn-lg">Find a jam</a>
+			<a href="/teams" class="btn-ghost btn-lg">My teams</a>
 			<a href="/u/{data.user?.username}" class="btn-ghost btn-lg">Your profile</a>
 		{:else}
 			<a href="/login?next=/jams" class="btn-primary btn-lg">Get started with itch.io</a>
@@ -161,7 +226,7 @@
 		</h2>
 
 		<ol class="mt-12 grid gap-10 lg:grid-cols-3 lg:gap-6">
-			<li class="flex flex-col">
+			<li class="flex flex-col lg:row-span-3 lg:grid lg:grid-rows-subgrid">
 				<div class="flex items-center gap-3">
 					<span
 						class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-button font-black text-on-button"
@@ -172,7 +237,7 @@
 				<p class="mt-2 text-muted">
 					Sign in with itch.io and pick your skills, tools and timezone. It takes about a minute.
 				</p>
-				<div class="mt-5 rounded-md border border-border bg-surface p-4" inert aria-hidden="true">
+				<div class="mt-5 card p-4" inert aria-hidden="true">
 					<div class="flex flex-wrap gap-1.5">
 						<!-- Mirrors the onboarding role picker: "Art" selected. -->
 						{#each ROLES.slice(0, 5) as role (role)}
@@ -197,7 +262,7 @@
 				</div>
 			</li>
 
-			<li class="flex flex-col">
+			<li class="flex flex-col lg:row-span-3 lg:grid lg:grid-rows-subgrid">
 				<div class="flex items-center gap-3">
 					<span
 						class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-button font-black text-on-button"
@@ -209,7 +274,7 @@
 					Every jam has its own board. Post that you're looking for a team, or start a team and list
 					the roles you need.
 				</p>
-				<div class="mt-5" inert aria-hidden="true">
+				<div class="mt-5 flex flex-col" inert aria-hidden="true">
 					<PlayerCard
 						user={exampleUser}
 						roles={['art']}
@@ -219,7 +284,7 @@
 				</div>
 			</li>
 
-			<li class="flex flex-col">
+			<li class="flex flex-col lg:row-span-3 lg:grid lg:grid-rows-subgrid">
 				<div class="flex items-center gap-3">
 					<span
 						class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-button font-black text-on-button"
@@ -231,7 +296,7 @@
 					Team up with another solo jammer, ask to join a team, or invite people. Once you're a
 					team, you'll see how to reach each other on Discord.
 				</p>
-				<div class="mt-5" inert aria-hidden="true">
+				<div class="mt-5 flex flex-col" inert aria-hidden="true">
 					<TeamCard team={exampleTeam}>
 						{#snippet actions()}
 							<span class="btn-primary btn-sm">Ask to join</span>
@@ -249,7 +314,7 @@
 	aria-label="Who it's for"
 >
 	{#each audiences as { icon: Icon, title, points } (title)}
-		<div class="card p-6 sm:p-8">
+		<div class="card card-panel">
 			<span
 				class="flex h-12 w-12 items-center justify-center rounded-md bg-accent/10 text-accent"
 				aria-hidden="true"
@@ -292,17 +357,7 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mx-auto max-w-2xl text-center">
 			<h2 id="jams-title" class="text-3xl font-black sm:text-4xl">Already know your jam?</h2>
-			{#if s.looking || s.openTeams}
-				<p class="mt-3 text-muted">
-					Right now <strong class="text-text"
-						>{plural(s.looking, 'jammer is', 'jammers are')}</strong
-					>
-					looking for a team and
-					<strong class="text-text">{plural(s.openTeams, 'team is', 'teams are')}</strong> recruiting.
-				</p>
-			{:else}
-				<p class="mt-3 text-muted">Search for it and be the first to post.</p>
-			{/if}
+			<p class="mt-3 text-muted">Search for your jam to see who’s looking for a team.</p>
 			<div class="mt-6 text-left"><JamSearch /></div>
 		</div>
 
@@ -311,7 +366,7 @@
 				<h3 class="text-xl font-bold">Jams to join</h3>
 				<a href="/jams" class="text-sm font-bold link">Browse all jams →</a>
 			</div>
-			<div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+			<div class="card-grid">
 				{#each data.jams as jam (jam.id)}<JamCard {jam} />{/each}
 			</div>
 		{/if}
@@ -322,18 +377,27 @@
 <section class="mx-auto max-w-3xl py-14 sm:py-20" aria-labelledby="faq-title">
 	<h2 id="faq-title" class="text-center text-3xl font-black sm:text-4xl">Questions</h2>
 	<div class="mt-8 divide-y divide-border border-y border-border">
-		{#each faqs as [q, a] (q)}
-			<details class="group py-4">
+		{#each faqs as faq (faq.id)}
+			<details id={faq.id} open={page.url.hash === `#${faq.id}`} class="group scroll-mt-24 py-4">
 				<summary
 					class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold [&::-webkit-details-marker]:hidden"
 				>
-					{q}
+					{faq.question}
 					<span
 						class="text-xl leading-none text-muted transition-transform group-open:rotate-45"
 						aria-hidden="true">+</span
 					>
 				</summary>
-				<p class="mt-2 text-muted">{a}</p>
+				{#each faq.answers as answer (answer)}
+					<p class="mt-3 text-muted">{answer}</p>
+				{/each}
+				{#if faq.links}
+					<div class="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+						{#each faq.links as link (link.href)}
+							<a href={link.href} class="link">{link.label} →</a>
+						{/each}
+					</div>
+				{/if}
 			</details>
 		{/each}
 	</div>

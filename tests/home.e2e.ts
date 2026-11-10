@@ -1,4 +1,20 @@
 import { expect, test } from '@playwright/test';
+import { contextOptions } from './helpers.ts';
+
+test('home shows community counts directly beneath the header', async ({ page }, info) => {
+	await page.goto('/');
+	const stats = page.getByRole('region', { name: 'Community stats', exact: true });
+	for (const label of ['Ongoing jams', 'Upcoming jams', 'Open teams', 'People looking for teams']) {
+		await expect(stats.getByText(label, { exact: true })).toBeVisible();
+	}
+	await expect(stats.locator('dd')).toHaveCount(4);
+	for (const count of await stats.locator('dd').allTextContents())
+		expect(count).toMatch(/^[\d,]+$/);
+	const header = await page.getByRole('banner').boundingBox();
+	const bounds = await stats.boundingBox();
+	expect(Math.abs(bounds!.y - (header!.y + header!.height))).toBeLessThanOrEqual(1);
+	await page.screenshot({ path: info.outputPath('home.png'), fullPage: true });
+});
 
 test('home search finds a jam and opens it from the keyboard', async ({ page }) => {
 	await page.goto('/');
@@ -13,7 +29,7 @@ test('home search finds a jam and opens it from the keyboard', async ({ page }) 
 });
 
 test('home search without JavaScript falls back to the jam list', async ({ browser }) => {
-	const context = await browser.newContext({ javaScriptEnabled: false });
+	const context = await browser.newContext({ ...contextOptions(), javaScriptEnabled: false });
 	const page = await context.newPage();
 	await page.goto('/');
 	await page.getByRole('combobox', { name: 'Search jams' }).fill('brackeys');

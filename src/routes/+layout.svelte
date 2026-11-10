@@ -3,14 +3,24 @@
 	import { onMount } from 'svelte';
 	import { page, navigating } from '$app/state';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import { menuNavigation } from '#lib/menu.ts';
 	import Avatar from '#lib/components/Avatar.svelte';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import Toasts from '#lib/components/Toasts.svelte';
-	import { APP_NAME, BRAND_COLOR, TAGLINE } from '#lib/config.ts';
+	import { dialogs } from '#lib/dialog.svelte.ts';
+	import {
+		APP_NAME,
+		BRAND_COLOR,
+		TAGLINE,
+		REPOSITORY_URL,
+		FEATURE_REQUEST_URL
+	} from '#lib/config.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
 	let menuOpen = $state(false);
+	let accountTrigger: HTMLButtonElement | undefined = $state();
 
 	// Lets E2E tests wait until the app is interactive.
 	onMount(() => document.documentElement.setAttribute('data-hydrated', ''));
@@ -42,6 +52,12 @@
 
 <svelte:window onclick={() => (menuOpen = false)} />
 
+<a
+	href="#main-content"
+	class="fixed top-2 left-2 z-[100] -translate-y-24 rounded-md bg-surface px-4 py-3 font-bold text-accent shadow-lg focus:translate-y-0"
+	>Skip to content</a
+>
+
 {#if navigating.to}
 	<div class="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-accent" aria-hidden="true"></div>
 {/if}
@@ -52,7 +68,10 @@
 	<!-- itch.io-style header: solid bar with a faint shadow. 64px tall so the logo fits at the
 	     brand kit's 180px minimum width; small screens show just the team mark (min 48px). -->
 	<header class="sticky top-0 z-40 bg-surface" style="box-shadow: var(--header-shadow)">
-		<nav class="mx-auto flex h-16 max-w-6xl items-center gap-5 px-4">
+		<nav
+			class="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-5"
+			aria-label="Main navigation"
+		>
 			<a href="/" class="flex shrink-0 items-center" aria-label="{APP_NAME} home">
 				<span class="sm:hidden">
 					<img
@@ -89,39 +108,53 @@
 			</a>
 			<a
 				href="/jams"
-				class="text-[15px] hover:text-text {isActive('/jams')
+				aria-label="Browse jams"
+				aria-current={isActive('/jams') ? 'page' : undefined}
+				class="inline-flex min-h-11 items-center text-[15px] hover:text-text {isActive('/jams')
 					? 'font-bold text-text'
 					: 'text-muted'}"
 			>
-				Browse jams
+				<span class="sm:hidden">Jams</span><span class="hidden sm:inline">Browse jams</span>
 			</a>
 
-			<div class="ml-auto flex items-center gap-3">
+			<div class="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
 				<ThemeToggle initial={data.theme} />
 				{#if data.user}
 					<a
 						href="/inbox"
-						class="relative text-[15px] hover:text-text {isActive('/inbox')
+						aria-current={isActive('/inbox') ? 'page' : undefined}
+						class="inline-flex min-h-11 items-center gap-1 text-[15px] hover:text-text {isActive(
+							'/inbox'
+						)
 							? 'font-bold text-text'
 							: 'text-muted'}"
 						aria-label={data.inboxCount ? `Inbox, ${data.inboxCount} pending` : 'Inbox'}
 					>
-						Inbox
+						<InboxIcon size={20} class="sm:hidden" aria-hidden="true" /><span
+							class="hidden sm:inline">Inbox</span
+						>
 						{#if data.inboxCount}
 							<span
-								class="absolute -top-2 -right-4 min-w-5 rounded-full bg-button px-1.5 text-center text-[11px] leading-5 font-bold text-on-button"
+								class="min-w-5 rounded-full bg-button px-1.5 text-center text-[11px] leading-5 font-bold text-on-button"
 							>
 								{data.inboxCount}
 							</span>
 						{/if}
 					</a>
-					<div class="relative ml-2">
+					<div class="relative sm:ml-2">
 						<button
+							bind:this={accountTrigger}
 							type="button"
-							class="flex items-center gap-1.5 rounded-md p-0.5 hover:bg-surface-2"
+							class="flex min-h-11 items-center gap-1.5 rounded-md p-0.5 hover:bg-surface-2"
 							aria-haspopup="menu"
 							aria-expanded={menuOpen}
 							aria-label="Account menu"
+							onkeydown={(e) => {
+								if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+									e.preventDefault();
+									menuOpen = true;
+								}
+							}}
 							onclick={(e) => {
 								e.stopPropagation();
 								menuOpen = !menuOpen;
@@ -136,11 +169,20 @@
 						{#if menuOpen}
 							<div
 								role="menu"
+								aria-label="Account"
+								use:menuNavigation={{ onclose: () => (menuOpen = false), trigger: accountTrigger }}
 								tabindex="-1"
-								class="absolute right-0 mt-1 w-48 overflow-hidden card py-1 text-sm shadow-lg"
+								class="absolute right-0 mt-1 w-48 card overflow-hidden py-1 text-sm shadow-lg"
 								onclick={(e) => e.stopPropagation()}
-								onkeydown={(e) => e.key === 'Escape' && (menuOpen = false)}
+								onkeydown={() => {}}
 							>
+								<a
+									role="menuitem"
+									class="block px-4 py-2 hover:bg-surface-2"
+									href="/teams"
+									aria-current={page.url.pathname === '/teams' ? 'page' : undefined}
+									onclick={() => (menuOpen = false)}>My teams</a
+								>
 								<a
 									role="menuitem"
 									class="block px-4 py-2 hover:bg-surface-2"
@@ -171,13 +213,22 @@
 		</nav>
 	</header>
 
-	<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
+	<main
+		id="main-content"
+		tabindex="-1"
+		class="mx-auto w-full max-w-6xl min-w-0 flex-1 px-4 py-6 [overflow-wrap:anywhere] sm:py-8"
+	>
 		{@render children()}
 	</main>
 
-	<footer class="bg-surface-2 py-6 text-center text-xs text-muted">
-		{APP_NAME} is a fan-made tool and is not affiliated with itch.io.
+	<footer class="bg-surface-2 px-4 py-6 text-center text-xs text-muted">
+		<p>{APP_NAME} is a fan project. Not affiliated with itch.io.</p>
+		<nav class="mt-2 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label="Project links">
+			<a href={REPOSITORY_URL} class="link">GitHub</a>
+			<a href={FEATURE_REQUEST_URL} class="link">Request a feature</a>
+			<a href="/#data-storage" class="link">Your data</a>
+		</nav>
 	</footer>
 </div>
 
-<Toasts />
+<Toasts active={dialogs.count === 0} />

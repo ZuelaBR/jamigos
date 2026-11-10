@@ -41,23 +41,34 @@ export async function upcomingJams(db: Db, limit: number, days = 30) {
 		.limit(limit);
 }
 
-/** Headline numbers for social proof ("12 jammers looking across 3 jams"). */
-export async function stats(db: Db) {
-	const now = new Date();
-	const [row] = await db
-		.select({
-			looking: sql<number>`count(*)`,
-			jams: sql<number>`count(distinct ${lfgPosts.jamId})`
-		})
-		.from(lfgPosts)
-		.innerJoin(jams, eq(jams.id, lfgPosts.jamId))
-		.where(and(eq(lfgPosts.status, 'open'), notEnded(now)));
-	const [t] = await db
-		.select({ teams: sql<number>`count(*)` })
-		.from(teams)
-		.innerJoin(jams, eq(jams.id, teams.jamId))
-		.where(and(eq(teams.status, 'open'), notEnded(now)));
-	return { looking: row?.looking ?? 0, jams: row?.jams ?? 0, openTeams: t?.teams ?? 0 };
+/** Homepage totals; count people once even when they post on several jam boards. */
+export async function stats(db: Db, now = new Date()) {
+	const timestamp = now.getTime();
+	const [[jamCounts], [people], [teamCounts]] = await db.batch([
+		db
+			.select({
+				runningJams: sql<number>`count(case when (${jams.startsAt} is null or ${jams.startsAt} <= ${timestamp}) and ${jams.endsAt} > ${timestamp} then 1 end)`,
+				upcomingJams: sql<number>`count(case when ${jams.startsAt} > ${timestamp} then 1 end)`
+			})
+			.from(jams)
+			.where(notEnded(now)),
+		db
+			.select({ looking: sql<number>`count(distinct ${lfgPosts.authorId})` })
+			.from(lfgPosts)
+			.innerJoin(jams, eq(jams.id, lfgPosts.jamId))
+			.where(and(eq(lfgPosts.status, 'open'), notEnded(now))),
+		db
+			.select({ openTeams: sql<number>`count(*)` })
+			.from(teams)
+			.innerJoin(jams, eq(jams.id, teams.jamId))
+			.where(and(eq(teams.status, 'open'), notEnded(now)))
+	]);
+	return {
+		runningJams: jamCounts?.runningJams ?? 0,
+		upcomingJams: jamCounts?.upcomingJams ?? 0,
+		looking: people?.looking ?? 0,
+		openTeams: teamCounts?.openTeams ?? 0
+	};
 }
 
 /** Typeahead search for the home page. Busy and popular jams first. */
