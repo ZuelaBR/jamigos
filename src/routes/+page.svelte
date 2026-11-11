@@ -102,10 +102,9 @@
 		},
 		{
 			id: 'fan-project',
-			question: 'Who made this? Is it part of itch.io?',
+			question: 'Is it part of itch.io?',
 			answers: [
-				'I made Jamigos as a fan project for people joining game jams. It’s not affiliated with itch.io.',
-				'I vibe coded it with Claude and Codex. I can code, but writing the whole thing by hand didn’t feel worth the time with these tools around.'
+				'I made Jamigos as a fan project for people joining game jams. It’s not affiliated with itch.io.'
 			]
 		},
 		{
