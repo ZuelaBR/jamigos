@@ -73,7 +73,7 @@ npm run build
 
 Unit tests use isolated D1 test databases. Playwright starts a server on **port 5174** and recreates only `.wrangler/e2e/` on every run. It seeds that database from saved itch.io listing pages in `src/lib/jams/fixtures/`, so tests do not crawl itch.io or use your regular local database.
 
-Keep `.dev.vars` configured for local development: the browser tests need `DEV_AUTH=1`, and seeding reads `SYNC_SECRET` from that file. The suite covers desktop and mobile Chromium. It uses the local sign-in shortcut, so passing tests do not verify live itch.io OAuth or production infrastructure. See [UX_REVIEW.md](UX_REVIEW.md) for the review scope and remaining verification.
+Keep `.dev.vars` configured for local development: the browser tests need `DEV_AUTH=1`, and seeding reads `SYNC_SECRET` from that file. The suite covers desktop and mobile Chromium. It uses the local sign-in shortcut, so passing tests do not verify live itch.io OAuth or production infrastructure.
 
 To refresh parser fixtures, save itch.io's [in-progress listing](https://itch.io/jams/in-progress) as `src/lib/jams/fixtures/in-progress.html` and its [upcoming listing](https://itch.io/jams/upcoming) as `src/lib/jams/fixtures/upcoming.html`. Keep the jam slugs used in browser tests available, or update those tests alongside the fixtures.
 
