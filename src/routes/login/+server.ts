@@ -28,6 +28,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 
 	redirect(
 		302,
-		authorizeUrl({ clientId, redirectUri: `${url.origin}/auth/callback`, state, challenge })
+		authorizeUrl({ clientId, redirectUri: `${url.origin}/auth/callback`, state, challenge }),
+		{ external: ['https://itch.io'] }
 	);
 };
